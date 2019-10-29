@@ -1,0 +1,63 @@
+version: '3.7'
+
+services:
+  #nginx: 
+  #  build:
+  #    context: ./nginx
+  #    dockerfile: Dockerfile
+  #  container_name: labmgmt_nginx
+  #  restart: always
+  #  depends_on:
+  #    - django
+  #  ports:
+  #    - 80:80
+
+  #django:
+  #  build:
+  #    context: ./django
+  #    dockerfile: Dockerfile
+  #  container_name: labmgmt_django
+  #  restart: always
+  #  depends_on:
+  #    - postgresql
+  #    - nutanix_core
+  #    - nutanix_foundation
+  #    - ansible
+  #  environment:
+  #    REDIS_HOST: db
+  #    REDIS_PORT: 6379
+  #    REDIS_DB: 0
+
+  #postgresql:
+  #  image: redis:5.0.6-alpine3.10
+  #  restart: always
+  #  container_name: labmgmt_postgresql
+  #  volumes:
+  #    - postgresql_volume:/data
+
+  #nutanix_core:
+  #  image: python
+  #  restart: always
+  #  container_name: labmgmt_nutanix_core
+
+  nutanix_foundation:
+    build:
+      context: ./app_ntnxfoundation
+      dockerfile: Dockerfile
+    container_name: app_foundation
+    environment:
+      - PORT=80
+      - USER=user
+      - PASSWORD=password
+    ports:
+      - 8081:80
+    restart: always
+
+  #ansible:
+  #  image: python
+  #  restart: always
+  #  container_name: labmgmt_ansible
+
+#volumes:
+#  postgresql_volume:
+#    driver: local
