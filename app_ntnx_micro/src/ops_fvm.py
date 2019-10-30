@@ -5,12 +5,12 @@ import time
 import os
 import traceback
 import threading
-from nutanix_fvm_client import NutanixFoundationClient
+from client_fvm import NutanixFoundationClient
 
 def check(fvm, cluster, aos_version, report_server):
   def fun():
     try:
-      ops = FoundationOps(fvm, cluster, aos_version, report_server)
+      ops = FvmOps(fvm, cluster, aos_version, report_server)
       ops.connect_to_fvm()
       ops.check_ipmi_mac()
       ops.check_ipmi_ip()
@@ -19,11 +19,9 @@ def check(fvm, cluster, aos_version, report_server):
   threading.Thread(target=fun).start()
 
 def image(fvm, cluster, aos_version, report_server):
-  print('image')
   def fun():
-    print('image2')
     try:
-      ops = FoundationOps(fvm, cluster, aos_version, report_server)
+      ops = FvmOps(fvm, cluster, aos_version, report_server)
       ops.connect_to_fvm()
       ops.check_ipmi_mac()
       ops.check_ipmi_ip()
@@ -42,7 +40,7 @@ def abort(fvmip, user, password):
   threading.Thread(target=fun).start()
 
 
-class FoundationOps:
+class FvmOps:
 
   def __init__(self, fvm, cluster, aos_version, report_server):
     try:

@@ -5,9 +5,9 @@ import threading
 import time
 import os
 import traceback
-from nutanix_eula_client import NutanixEulaClient
+from client_eula import NutanixEulaClient
 
-def run(fvm, eula):
+def run(eula):
   def fun():
     try:
       ops = EulaOps(eula)

@@ -164,3 +164,69 @@ class Vms:
 
   def snapshot_vm(self, vm_name, snapshot_name):
     return (False, {'error':'Error. Not supported now.'})
+
+  def get_vm_disks(self, vm_name):
+    error_dict = {}
+    try:
+      response_dict = self.get_v2('/vms/?include_vm_disk_config=true', error_dict)
+      for vm in response_dict['entities']:
+        if vm['name'] != vm_name:
+          continue
+        vdisks = []
+        for vdisk in vm['vm_disk_info']:
+          if vdisk['is_cdrom']:
+            continue
+          vdisks.append(vdisk['disk_address']['disk_label'])
+        return (True, vdisks)
+      raise IntendedException('Error. Unable to find the vm "{}"'.format(name))
+
+    except Exception as exception:
+      self.handle_error(exception, error_dict)
+      return (False, error_dict)
+
+  def get_poweredon_vms(self):
+    error_dict = {}
+    try:
+      response_dict = self.get_v2('/vms/?include_vm_nic_config=true', error_dict)
+      vm_list = []
+      for entity in response_dict['entities']:
+        if(entity.get('power_state') == 'on'):
+          vm_list.append(entity.get('name'))
+      return (True, vm_list)
+
+    except Exception as exception:
+      self.handle_error(exception, error_dict)
+      return (False, error_dict)
+
+  def get_vm_powerstate(self, vm_name):
+    error_dict = {}
+    try:
+      response_dict = self.get_v2('/vms', error_dict)
+      for vm in response_dict['entities']:
+        if vm['name'] != vm_name:
+          continue
+        return (True, vm['power_state'])
+      raise IntendedException('Error. Unable to find the vm "{}"'.format(name))
+
+    except Exception as exception:
+      self.handle_error(exception, error_dict)
+      return (False, error_dict)
+
+  def get_vm_ip(self, vm_name):
+    error_dict = {}
+    try:
+      response_dict = self.get_v2('/vms/?include_vm_nic_config=true', error_dict)
+      for vm in response_dict['entities']:
+        if vm['name'] != vm_name:
+          continue
+        if len(vm['vm_nics']) == 0:
+          continue
+        try:
+          return (True, vm['vm_nics'][0]['ip_address'])
+        except:
+          pass
+      raise IntendedException('Error. Unable to find the vm "{}"'.format(name))
+
+    except Exception as exception:
+      self.handle_error(exception, error_dict)
+      return (False, error_dict)

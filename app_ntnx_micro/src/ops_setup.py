@@ -1,10 +1,27 @@
 import json
 import sys
 import logging
+import threading
 import time
 import os
 import traceback
-from nutanix_restapi import NutanixFoundationClient, NutanixRestApiClient
+from client_setup import NutanixSetupClient
+
+def run(cluster, containers, networks, ipam_networks, images):
+  def fun():
+    try:
+      ops = SetupOps(cluster, containers, networks, ipam_networks, images)
+      ops.connect_to_prism()
+      ops.set_language()
+      ops.delete_unused_containers()
+      ops.create_containers()
+      ops.delete_unused_networks()
+      ops.create_networks()
+      ops.create_ipam_networks()
+      ops.create_images()
+    except Exception as e:
+      print(e)
+  threading.Thread(target=fun).start()
 
 class SetupOps:
   def __init__(self, cluster, containers, networks, ipam_networks, images):
@@ -21,11 +38,13 @@ class SetupOps:
 
   def connect_to_prism(self):
     print('connect_to_prism()')
+    print('ip={}, user={}, password={}'.format(self.ip, self.user, self.password))
     try:
-      self.session = NutanixCoreClient(self.ip, self.user, self.password)
+      self.session = NutanixSetupClient(self.ip, self.user, self.password)
     except:
-      print('  Failed with error "Connection or Credential problem"')
-      raise ErrorException('Failed to make connection to Prism.')
+      error = "failed to connect to prism"
+      print(error)
+      raise ErrorException(error)
 
   def set_language(self):
     print('set_language()')
@@ -37,7 +56,7 @@ class SetupOps:
       print(error)
       raise ErrorException(error)
 
-    (success, result) = self.session.change_language(lmap[language])
+    (success, result) = self.session.change_language('admin', lmap[language])
     if not success:
       error = "failed to set language. reason '{}'".format(response['error'])
       print(error)
@@ -47,31 +66,49 @@ class SetupOps:
     print('delete_unused_containers()')
     (success, existing_containers) = self.session.get_container_names()
     if not success:
-      raise Exception('Error happens on getting existing container names.')
+      error = "get container names failed. reason '{}'".format(result['error'])
+      print(error)
+      raise ErrorException(error)
 
     for existing_container in existing_containers:
       (success, container_info) = self.session.get_container_info(existing_container)
       if not success:
-        raise Exception('Error happens on getting container info "{}".'.format(existing_container))
+        error = "get container info failed. reason '{}'".format(result['error'])
+        print(error)
+        raise ErrorException(error)
       if container_info['usage'] != '0':
         continue
+
       (success, _) = self.session.delete_container(existing_container)
       if not success:
-        raise Exception('Error happens on deleting container "{}".'.format(existing_container)) 
+        error = "delete container failed. reason '{}'".format(result['error'])
+        print(error)
+        raise ErrorException(error)
+      else:
+        print("delete container '{}'".format(existing_container))
 
   def create_containers(self):
     print('create_containers()')
     (success, existing_containers) = self.session.get_container_names()
     if not success:
-      raise Exception('Error happens on getting existing container names.')
+      edict = existing_containers
+      error = "get container names failed. reason '{}'".format(edict['error'])
+      print(error)
+      raise ErrorException(error)
 
     task_list = []
     for container in self.containers:
-      if container in existing_containers:
+      name = container['name']
+      if name in existing_containers:
         continue
-      (success, taskuuid) = self.session.create_container(container)
+      (success, taskuuid) = self.session.create_container(name)
       if not success:
-        raise Exception('Error happens on creating container "{}".'.format(container))
+        edict = taskuuid
+        error = "create container failed. reason '{}'".format(edict)
+        print(error)
+        raise ErrorException(error)
+      else:
+        print("create container '{}'".format(name))
       task_list.append(taskuuid)
 
     # wait till end
@@ -81,18 +118,27 @@ class SetupOps:
     print('delete_unused_networks()')
     (success, existing_networks) = self.session.get_network_names()
     if not success:
-      raise Exception('Error happens on getting existing networks.')
+      error = "session.get_network_names() failed. reason '{}'".format(result['error'])
+      print(error)
+      raise ErrorException(error)
 
     task_list = []
     for existing_network in existing_networks:
       (success, used) = self.session.is_network_used(existing_network)
       if not success:
-        raise Exception('Error happens on getting existing networks.')
+        error = "session.is_network_used() failed. reason '{}'".format(result['error'])
+        print(error)
+        raise ErrorException(error)
       if used:
         continue
+
       (success, taskuuid) = self.session.delete_network(existing_network)
       if not success:
-        raise Exception('Error happens on getting existing networks.')
+        error = "session.delete_network() failed. reason '{}'".format(result['error'])
+        print(error)
+        raise ErrorException(error)
+      else:
+        print("delete network '{}'".format(existing_network))
       task_list.append(taskuuid)
 
     self.wait_tasks(task_list)
@@ -101,8 +147,11 @@ class SetupOps:
     print('create_networks()')
     (success, existing_networks) = self.session.get_network_names()
     if not success:
-      raise Exception('Error happens on getting existing networks.')
+      error = "session.get_network_names() failed. reason '{}'".format(result['error'])
+      print(error)
+      raise ErrorException(error)
 
+    task_list = []
     for network in self.networks:
       name = network['name']
       vlan = network['vlan']
@@ -110,43 +159,71 @@ class SetupOps:
         continue
       (success, taskuuid) = self.session.create_network(name, vlan)
       if not success:
-        raise Exception('Error happens on creating network "{}"'.format(name))
+        error = "session.create_network() failed. reason '{}'".format(result['error'])
+        print(error)
+        raise ErrorException(error)
+      else:
+        print("create network '{}'".format(name))
       task_list.append(taskuuid)
 
     self.wait_tasks(task_list)
 
   def create_ipam_networks(self):
     print('create_ipam_networks()')
+    (success, hypervisor) = self.session.get_hypervisor()
+    if not success:
+      error = "session.get_hypervisor() failed. reason '{}'".format(result['error'])
+      print(error)
+      raise ErrorException(error)
+    if hypervisor.lower() != 'ahv':
+      return
+
     (success, existing_networks) = self.session.get_network_names()
     if not success:
-      raise Exception('Error happens on getting existing networks.')
+      edict = existing_networks
+      error = "session.get_network_names() failed. reason '{}'".format(edict)
+      print(error)
+      raise ErrorException(error)
 
-    for network in self.ipam_networks:
-      name = network['name']
-      vlan = network['vlan']
+    task_list = []
+    for ipam_network in self.ipam_networks:
+      name = ipam_network['name']
       if name in existing_networks:
         continue
-      if hypervisor != 'AHV':
-        (success, taskuuid) = self.session.create_network(name, vlan)
-        if not success:
-          raise Exception('Error happens on creating network "{}"'.format(name))
+
+      vlan = ipam_network['vlan']
+      network = ipam_network['network']
+      prefix = ipam_network['prefix']
+      gateway = ipam_network['gateway']
+      pools = ipam_network['pools']
+      dns = ipam_network['dns']
+      (success, taskuuid) = self.session.create_network_managed(name, vlan, network, 
+        prefix, gateway, pools, dns)
+      if not success:
+        edict = taskuuid
+        error = "session.create_network_managed() failed. reason '{}'".format(edict)
+        print(error)
+        raise ErrorException(error)
       else:
-        (success, taskuuid) = self.session.create_network_managed(name, vlan, network, 
-          prefix, gateway, pools, dns)
-        if not success:
-          raise Exception('Error happens on creating network "{}"'.format(name))
+        print("create ipam network '{}'".format(name))
       task_list.append(taskuuid)
 
     self.wait_tasks(task_list)
 
   def create_images(self):
     print('create_images()')
-    (success, containers) = self.session.get_container_names()
-    if not success:
-      raise Exception('Error happens on checking container existance.')
     (success, existing_images) = self.session.get_image_names()
     if not success:
-      raise Exception('Error happens on getting existing images names.')
+      edict = existing_images
+      error = "session.get_image_names() failed. reason '{}'".format(edict)
+      print(error)
+      raise ErrorException(error)
+
+    (success, containers) = self.session.get_container_names()
+    if not success:
+      error = "session.get_container_names() failed. reason '{}'".format(edict)
+      print(error)
+      raise ErrorException(error)
 
     task_list = []
     for image in self.images:
@@ -156,12 +233,17 @@ class SetupOps:
 
       if name in existing_images:
         continue
-      if image['container'] not in containers:
-        raise Exception('Error happens on uploading image.')
+      if container not in containers:
+        error = "container does not exist. '{}'".format(container)
+        print(error)
+        raise ErrorException(error)
 
       (success, taskuuid) = self.session.upload_image(url, container, name)
       if not success:
-        raise Exception('Error happens on uploading image.')
+        edict = taskuuid
+        error = "session.upload_image() failed. reason '{}'".format(edict)
+        print(error)
+        raise ErrorException(error)
       task_list.append(taskuuid)
 
     self.wait_tasks(task_list)

@@ -5,4 +5,4 @@ WORKDIR /src
 ENV PORT=80
 ENV USER=user
 ENV PASSWORD=password
-ENTRYPOINT ["python", "-u", "server.py"]
+ENTRYPOINT ["python", "-u", "server_setup.py"]

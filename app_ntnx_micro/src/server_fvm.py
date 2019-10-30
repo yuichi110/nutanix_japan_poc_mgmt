@@ -1,5 +1,5 @@
 import os, json, re
-import ops_foundation
+import ops_fvm
 from flask import Flask, jsonify, request
 
 PORT = int(os.environ['PORT'])
@@ -12,7 +12,7 @@ app = Flask('')
 def api_check():
   try:
     d = get_normalized_json(request.get_data().decode())
-    ops_foundation.check(d['fvm'], d['cluster'], d['aos_version'], d['report_server'])
+    ops_fvm.check(d['fvm'], d['cluster'], d['aos_version'], d['report_server'])
     return (jsonify({}), 200)
   except Exception as e:
     return handle_error(e)
@@ -21,7 +21,7 @@ def api_check():
 def api_image():
   try:
     d = get_normalized_json(request.get_data().decode())
-    ops_foundation.image(d['fvm'], d['cluster'], d['aos_version'], d['report_server'])
+    ops_fvm.image(d['fvm'], d['cluster'], d['aos_version'], d['report_server'])
     return (jsonify({}), 200)
   except Exception as e:
     return handle_error(e)

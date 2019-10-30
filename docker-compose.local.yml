@@ -12,52 +12,104 @@ services:
   #  ports:
   #    - 80:80
 
-  #django:
-  #  build:
-  #    context: ./django
-  #    dockerfile: Dockerfile
-  #  container_name: labmgmt_django
-  #  restart: always
-  #  depends_on:
-  #    - postgresql
-  #    - nutanix_core
-  #    - nutanix_foundation
-  #    - ansible
-  #  environment:
-  #    REDIS_HOST: db
-  #    REDIS_PORT: 6379
-  #    REDIS_DB: 0
+  #
+  # APP
+  #
 
-  #postgresql:
-  #  image: redis:5.0.6-alpine3.10
-  #  restart: always
-  #  container_name: labmgmt_postgresql
-  #  volumes:
-  #    - postgresql_volume:/data
-
-  #nutanix_core:
-  #  image: python
-  #  restart: always
-  #  container_name: labmgmt_nutanix_core
-
-  nutanix_foundation:
+  app_core:
     build:
-      context: ./app_ntnxfoundation
+      context: ./django
       dockerfile: Dockerfile
-    container_name: app_foundation
+    container_name: app_core
+    restart: always
+    depends_on:
+      - postgresql
+      - app_ntnx_fvm
+      - app_ntnx_eula
+      - app_ntnx_setup
+      - app_ntnx_power
+    environment:
+      DB_HOST: postgresql
+      DB_PORT: 5432
+      DB_PASSWORD: password
+      MICRO_APP_USER: user
+      MICRO_APP_PASSWORD: password
+      APP_NTNX_FVM_HOST: app_ntnx_fvm
+      APP_NTNX_FVM_PORT: 80
+      APP_NTNX_EULA_HOST: app_ntnx_eula
+      APP_NTNX_EULA_PORT: 80
+      APP_NTNX_SETUP_HOST: app_ntnx_setup
+      APP_NTNX_SETUP_PORT: 80
+      APP_NTNX_POWER_HOST: app_ntnx_power
+      APP_NTNX_POWER_PORT: 80
+
+  app_ntnx_fvm:
+    build:
+      context: ./app_ntnx_micro
+      dockerfile: Dockerfile.fvm
+    container_name: app_ntnx_fvm
     environment:
       - PORT=80
       - USER=user
       - PASSWORD=password
     ports:
       - 8081:80
-    restart: always
+    restart: unless-stopped
 
-  #ansible:
-  #  image: python
-  #  restart: always
-  #  container_name: labmgmt_ansible
+  app_ntnx_eula:
+    build:
+      context: ./app_ntnx_micro
+      dockerfile: Dockerfile.eula
+    container_name: app_ntnx_eula
+    environment:
+      - PORT=80
+      - USER=user
+      - PASSWORD=password
+    ports:
+      - 8082:80
+    restart: unless-stopped
 
-#volumes:
-#  postgresql_volume:
-#    driver: local
+  app_ntnx_setup:
+    build:
+      context: ./app_ntnx_micro
+      dockerfile: Dockerfile.setup
+    container_name: app_ntnx_setup
+    environment:
+      - PORT=80
+      - USER=user
+      - PASSWORD=password
+    ports:
+      - 8083:80
+    restart: unless-stopped
+
+  app_ntnx_power:
+    build:
+      context: ./app_ntnx_micro
+      dockerfile: Dockerfile.power
+    container_name: app_ntnx_power
+    environment:
+      - PORT=80
+      - USER=user
+      - PASSWORD=password
+    ports:
+      - 8084:80
+    restart: unless-stopped
+
+  #
+  # DB
+  #
+
+  postgresql:
+    image: postgres
+    container_name: db_postgresql
+    restart: unless-stopped
+    ports:
+      - 5432:5432
+    volumes:
+      - postgresql_volume:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=password
+
+volumes:
+  postgresql_volume:
+    driver: local

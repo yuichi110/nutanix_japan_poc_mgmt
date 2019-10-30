@@ -3,7 +3,6 @@ class Networks:
   def __init__(self, *_):
     ...
 
-
   def get_network_names(self):
     error_dict = {}
     try:
@@ -85,8 +84,8 @@ class Networks:
           "pool": []
         }
       }
-      for (from_ip, to_ip) in pools:
-        entity = {'range' : '{} {}'.format(from_ip, to_ip)}
+      for pool in pools:
+        entity = {'range' : '{} {}'.format(pool['from'], pool['to'])}
         body_dict['ip_config']['pool'].append(entity)
 
       response_dict = self.post_v2('/networks/', body_dict, error_dict)

@@ -1,6 +1,5 @@
 import os, json, re
-import ops_eula
-import ops_setup
+import ops_power
 from flask import Flask, jsonify, request
 
 PORT = int(os.environ['PORT'])
@@ -9,25 +8,25 @@ PASSWORD = os.environ['PASSWORD']
 
 app = Flask('')
 
-@app.route('/api/v1/eula/', methods=['POST'])
-def api_eula():
+@app.route('/api/v1/up/', methods=['POST'])
+def api_up():
   try:
-    d = get_normalized_eula_json(request.get_data().decode())
-    ops_eula.run(d)
+    d = get_normalized_json(request.get_data().decode())
+    ops_power.up(d)
     return (jsonify({}), 200)
   except Exception as e:
     return handle_error(e)
 
-@app.route('/api/v1/setup/', methods=['POST'])
-def api_setup():
+@app.route('/api/v1/up/', methods=['POST'])
+def api_down():
   try:
-    d = get_normalized_setup_json(request.get_data().decode())
-    ops_setup.run(d)
+    d = get_normalized_json(request.get_data().decode())
+    ops_power.down(d)
     return (jsonify({}), 200)
   except Exception as e:
     return handle_error(e)
 
-def get_normalized_eula_json(body):
+def get_normalized_json(body):
   try:
     d = json.loads(body)
   except Exception as e:
@@ -49,10 +48,6 @@ def get_normalized_eula_json(body):
       'ip':           d['ip'],
       'user':         d['user'],
       'password':     d['password'],
-      'eula_name':    d['eula_name'],
-      'eula_company': d['eula_company'],
-      'eula_title':   d['eula_title'],
-      'enable_pulse': d['enable_pulse'],
     }
   except Exception as e:
     raise FormatException(str(e))
