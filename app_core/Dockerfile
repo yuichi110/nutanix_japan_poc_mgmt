@@ -1,11 +1,17 @@
 From python:3.7.5-slim
-RUN pip install django==2.2.6 whitenoise whitenoise==4.1.4
+
+RUN pip install django==2.2.6 psycopg2-binary==2.8.4 gunicorn==19.9.0
 ADD ./src /src
 WORKDIR /src
 
 ENV PORT=80
-ENV MICRO_USER=user
-ENV MICRO_PASSWORD=password
+
+ENV DB_HOST=127.0.0.1
+ENV DB_PORT=5432
+ENV DB_PASSWORD=password
+
+ENV MICRO_APP_USER=user
+ENV MICRO_APP_PASSWORD=password
 ENV NTNX_FVM_HOST=127.0.0.1
 ENV NTNX_FVM_PORT=8081
 ENV NTNX_EULA_HOST=127.0.0.1
@@ -15,4 +21,4 @@ ENV NTNX_SETUP_PORT=8083
 ENV NTNX_POWER_HOST=127.0.0.1
 ENV NTNX_POWER_PORT=8084
 
-ENTRYPOINT ["python", "-u", "server_fvm.py"]
+ENTRYPOINT ["python", "-u", "manage.py", "runserver", "0.0.0.0:80"]

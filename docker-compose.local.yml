@@ -18,18 +18,21 @@ services:
 
   app_core:
     build:
-      context: ./django
+      context: ./app_core
       dockerfile: Dockerfile
     container_name: app_core
     restart: always
+    ports:
+      - 8080:80
     depends_on:
-      - postgresql
+      - db_postgresql
       - app_ntnx_fvm
       - app_ntnx_eula
       - app_ntnx_setup
       - app_ntnx_power
     environment:
-      DB_HOST: postgresql
+      PORT: 80
+      DB_HOST: db_postgresql
       DB_PORT: 5432
       DB_PASSWORD: password
       MICRO_APP_USER: user
@@ -99,8 +102,8 @@ services:
   # DB
   #
 
-  postgresql:
-    image: postgres
+  db_postgresql:
+    image: postgres:11.5
     container_name: db_postgresql
     restart: unless-stopped
     ports:
