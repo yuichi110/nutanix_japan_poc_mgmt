@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+from common.errors import *
 
 import uuid
 import json
@@ -14,11 +15,15 @@ class Cluster(models.Model):
 
   @classmethod
   def exists(cls, cluster_uuid):
-    return Cluster.objects.filter(uuid=uuid).exists()
+    return Cluster.objects.filter(uuid=cluster_uuid).exists()
 
   @classmethod
   def create(cls, json_text):
     d = cls._get_normalize_json(json_text)
+    name = d['cluster']['name']
+    if Cluster.objects.filter(name=name).exists():
+      raise Exception400('same name cluster already exist')
+
     cluster_object = Cluster.objects.create(name=d['cluster']['name'], data='')
     d['uuid'] = str(cluster_object.uuid)
     cluster_object.data = json.dumps(d, indent=2)
@@ -28,28 +33,34 @@ class Cluster(models.Model):
   @classmethod
   def read(cls, cluster_uuid):
     cluster_object = Cluster.objects.filter(uuid=cluster_uuid)[0]
-    return cluster_object.data
+    return json.loads(cluster_object.data)
 
   @classmethod
   def read_all(cls):
     cluster_objects = Cluster.objects.all()
     cluster_list = [json.loads(cluster_object.data) for cluster_object in cluster_objects]
-    return json.dumps(cluster_list)
+    return cluster_list
 
   @classmethod
   def update(cls, cluster_uuid, json_text):
     cluster_object = Cluster.objects.filter(uuid=cluster_uuid)[0]
     d = cls._get_normalize_json(json_text)
+    new_name = d['cluster']['name']
+    if new_name != cluster_object.name:
+      if Cluster.objects.filter(name=new_name).exists():
+        raise Exception400('same name cluster already exist')
+
     d['uuid'] = str(cluster_uuid)
-    cluster_object.name = d['cluster']['name']
+    cluster_object.name = new_name
     cluster_object.data = json.dumps(d, indent=2)
     cluster_object.save()
+    return d
 
   @classmethod
-  def delete(cls, cluster_uuid):
+  def delete_(cls, cluster_uuid):
     cluster_object = Cluster.objects.filter(uuid=cluster_uuid)[0]
     cluster_object.delete()
-    return '{}'
+    return {}
 
   @classmethod
   def _get_normalize_json(cls, json_text):
@@ -59,50 +70,54 @@ class Cluster(models.Model):
       raise Exception('failed to parse json')
 
     if 'cluster' not in d:
-      raise Exception("key 'cluster' not in json")
+      raise Exception400("key 'cluster' not in json")
     if 'nodes' not in d:
-      raise Exception("key 'cluster' not in json")
+      raise Exception400("key 'cluster' not in json")
     if 'fvm' not in d:
-      raise Exception("key 'fvm' not in json")
+      raise Exception400("key 'fvm' not in json")
+    if 'eula' not in d:
+      raise Exception400("key 'eula' not in json")
     if 'containers' not in d:
-      raise Exception("key 'fvm' not in json")
+      raise Exception400("key 'fvm' not in json")
     if 'networks' not in d:
-      raise Exception("key 'fvm' not in json")
+      raise Exception400("key 'fvm' not in json")
     if 'ipam_networks' not in d:
-      raise Exception("key 'fvm' not in json")
+      raise Exception400("key 'fvm' not in json")
     if 'images' not in d:
-      raise Exception("key 'fvm' not in json")    
+      raise Exception400("key 'fvm' not in json")    
 
     d = {
-      'cluster':cls._get_cluster(d['cluster'])
-      'nodes':cls._get_nodes(d['nodes']),
-      'fvm':cls._get_fvm(d['fvm']),
-      'containers':cls._get_containers(d['containers']),
-      'networks':cls._get_networks(d['networks']),
-      'ipam_networks':cls._get_ipam_networks(d['ipam_networks']),
-      'image':cls._get_images(d['image'])
+      'cluster':cls._get_json_cluster(d['cluster']),
+      'nodes':cls._get_json_nodes(d['nodes']),
+      'fvm':cls._get_json_fvm(d['fvm']),
+      'eula':cls._get_json_eula(d['eula']),
+      'containers':cls._get_json_containers(d['containers']),
+      'networks':cls._get_json_networks(d['networks']),
+      'ipam_networks':cls._get_json_ipam_networks(d['ipam_networks']),
+      'images':cls._get_json_images(d['images'])
     }
+    return d
 
   @classmethod
   def _get_json_cluster(cls, d):
     if 'ip' not in d:
-      raise Exception("key 'ip' not in root.cluster")
+      raise Exception400("key 'ip' not in root.cluster")
     if 'user' not in d:
-      raise Exception("key 'user' not in root.cluster")
+      raise Exception400("key 'user' not in root.cluster")
     if 'password' not in d:
-      raise Exception("key 'password' not in root.cluster")
+      raise Exception400("key 'password' not in root.cluster")
     if 'name' not in d:
-      raise Exception("key 'name' not in root.cluster")
+      raise Exception400("key 'name' not in root.cluster")
     if 'netmask' not in d:
-      raise Exception("key 'netmask' not in root.cluster")
+      raise Exception400("key 'netmask' not in root.cluster")
     if 'gateway' not in d:
-      raise Exception("key 'gateway' not in root.cluster")
+      raise Exception400("key 'gateway' not in root.cluster")
     if 'ntp_server' not in d:
-      raise Exception("key 'ntp_server' not in root.cluster")
+      raise Exception400("key 'ntp_server' not in root.cluster")
     if 'name_server' not in d:
-      raise Exception("key 'name_server' not in root.cluster")
+      raise Exception400("key 'name_server' not in root.cluster")
     if 'language' not in d:
-      raise Exception("key 'language' not in root.cluster")
+      raise Exception400("key 'language' not in root.cluster")
 
     cluster = {
       'ip':d['ip'],
@@ -116,23 +131,24 @@ class Cluster(models.Model):
       'name_server':d['name_server'],
       'language':d['language'],
     }
+    return cluster
 
   @classmethod
   def _get_json_nodes(cls, d):
     nodes = []
     for elem in d:
       if 'host_name' not in elem:
-        raise Exception("key 'host_name' not in root.nodes.{}")
+        raise Exception400("key 'host_name' not in root.nodes.{}")
       if 'position' not in elem:
-        raise Exception("key 'position' not in root.nodes.{}")
+        raise Exception400("key 'position' not in root.nodes.{}")
       if 'ipmi_mac' not in elem:
-        raise Exception("key 'ipmi_mac' not in root.nodes.{}")
+        raise Exception400("key 'ipmi_mac' not in root.nodes.{}")
       if 'ipmi_ip' not in elem:
-        raise Exception("key 'ipmi_ip' not in root.nodes.{}")
+        raise Exception400("key 'ipmi_ip' not in root.nodes.{}")
       if 'host_ip' not in elem:
-        raise Exception("key 'host_ip' not in root.nodes.{}")
+        raise Exception400("key 'host_ip' not in root.nodes.{}")
       if 'cvm_ip' not in elem:
-        raise Exception("key 'cvm_ip' not in root.nodes.{}")
+        raise Exception400("key 'cvm_ip' not in root.nodes.{}")
 
       node = {
         'host_name': elem['host_name'],
@@ -155,19 +171,19 @@ class Cluster(models.Model):
   @classmethod
   def _get_json_fvm(cls, d):
     if 'ips' not in d:
-      raise Exception("key 'ip' not in root.fvm.{}")
+      raise Exception400("key 'ip' not in root.fvm.{}")
     if 'user' not in d:
-      raise Exception("key 'user' not in root.fvm.{}")
+      raise Exception400("key 'user' not in root.fvm.{}")
     if 'password' not in d:
-      raise Exception("key 'password' not in root.fvm.{}")
+      raise Exception400("key 'password' not in root.fvm.{}")
     if 'nos_packages' not in d:
-      raise Exception("key 'name' not in root.fvm.{}")
+      raise Exception400("key 'name' not in root.fvm.{}")
 
     fvm = {
-      'ips' = [],
-      'user' = d['user'],
-      'password' = d['password'],
-      'nos_packages' = []
+      'ips': [],
+      'user': d['user'],
+      'password': d['password'],
+      'nos_packages': []
     }
 
     for ip in d['ips']:
@@ -175,9 +191,9 @@ class Cluster(models.Model):
 
     for elem in d['nos_packages']:
       if 'version' not in elem:
-        raise Exception("key 'version' not in root.fvm.nos_packages[].{}")
+        raise Exception400("key 'version' not in root.fvm.nos_packages[].{}")
       if 'file' not in elem:
-        raise Exception("key 'file' not in root.fvm.nos_packages[].{}")
+        raise Exception400("key 'file' not in root.fvm.nos_packages[].{}")
 
       nos_package = {
         'version': elem['version'],
@@ -186,6 +202,21 @@ class Cluster(models.Model):
       fvm['nos_packages'].append(nos_package)
 
     return fvm
+
+  @classmethod
+  def _get_json_eula(cls, d):
+    if 'user' not in d:
+      raise Exception400("key 'user' not in root.eula.{}")
+    if 'company' not in d:
+      raise Exception400("key 'user' not in root.company.{}")
+    if 'title' not in d:
+      raise Exception400("key 'password' not in root.title.{}")
+    eula = {
+      'user': d['user'],
+      'company': d['company'],
+      'title': d['title']
+    }
+    return eula
 
   @classmethod
   def _get_json_containers(cls, d):
@@ -204,9 +235,9 @@ class Cluster(models.Model):
     networks = []
     for elem in d:
       if 'name' not in elem:
-        raise Exception("key 'name' not in root.networks[].{}")
+        raise Exception400("key 'name' not in root.networks[].{}")
       if 'vlan' not in elem:
-        raise Exception("key 'name' not in root.networks[].{}")
+        raise Exception400("key 'name' not in root.networks[].{}")
       network = {
         'name': elem['name'],
         'vlan': elem['vlan']
@@ -216,22 +247,22 @@ class Cluster(models.Model):
 
   @classmethod
   def _get_json_ipam_networks(cls, d):
-    networks = []
+    ipam_networks = []
     for elem in d:
       if 'name' not in elem:
-        raise Exception("key 'name' not in root.ipam_networks[].{}")
+        raise Exception400("key 'name' not in root.ipam_networks[].{}")
       if 'vlan' not in elem:
-        raise Exception("key 'vlan' not in root.ipam_networks[].{}")
+        raise Exception400("key 'vlan' not in root.ipam_networks[].{}")
       if 'network' not in elem:
-        raise Exception("key 'network' not in root.ipam_networks[].{}")
+        raise Exception400("key 'network' not in root.ipam_networks[].{}")
       if 'prefix' not in elem:
-        raise Exception("key 'prefix' not in root.ipam_networks[].{}")
+        raise Exception400("key 'prefix' not in root.ipam_networks[].{}")
       if 'gateway' not in elem:
-        raise Exception("key 'gateway' not in root.ipam_networks[].{}")
+        raise Exception400("key 'gateway' not in root.ipam_networks[].{}")
       if 'dns' not in elem:
-        raise Exception("key 'dns' not in root.ipam_networks[].{}")
+        raise Exception400("key 'dns' not in root.ipam_networks[].{}")
       if 'pools' not in elem:
-        raise Exception("key 'pools' not in root.ipam_networks[].{}")
+        raise Exception400("key 'pools' not in root.ipam_networks[].{}")
 
       ipam_network = {
         'name': elem['name'],
@@ -244,9 +275,9 @@ class Cluster(models.Model):
       }
       for elem2 in elem['pools']:
         if 'from' not in elem2:
-          raise Exception("key 'from' not in root.ipam_networks[].pools[].{}")
+          raise Exception400("key 'from' not in root.ipam_networks[].pools[].{}")
         if 'to' not in elem2:
-          raise Exception("key 'to' not in root.ipam_networks[].pools[].{}")
+          raise Exception400("key 'to' not in root.ipam_networks[].pools[].{}")
         pool = {
           'from': elem2['from'],
           'to':   elem2['to']
@@ -260,12 +291,12 @@ class Cluster(models.Model):
   def _get_json_images(cls, d):
     images = []
     for elem in d:
-      if 'name' not in d:
-        raise Exception("key 'name' not in root.images[].{}")
-      if 'container' not in d:
-        raise Exception("key 'container' not in root.images[].{}")
-      if 'url' not in d:
-        raise Exception("key 'url' not in root.images[].{}")
+      if 'name' not in elem:
+        raise Exception400("key 'name' not in root.images[].{}")
+      if 'container' not in elem:
+        raise Exception400("key 'container' not in root.images[].{}")
+      if 'url' not in elem:
+        raise Exception400("key 'url' not in root.images[].{}")
       image = {
         'name': elem['name'],
         'container': elem['container'],
@@ -273,4 +304,3 @@ class Cluster(models.Model):
       }
       images.append(image)
     return images
-

@@ -1,0 +1,17 @@
+{
+  "ips" : [
+    "10.149.160.5"
+  ],
+  "user" : "nutanix",
+  "password" : "nutanix/4u",
+  "nos_packages" : [
+    {
+      "version":"5.5.7",
+      "file":"nutanix_installer_package-release-euphrates-5.5.7-stable.tar"
+    },
+    {
+      "version":"5.10.1",
+      "file":"nutanix_installer_package-release-euphrates-5.10.1-stable.tar"
+    }
+  ]
+}

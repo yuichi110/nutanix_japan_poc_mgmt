@@ -1,0 +1,22 @@
+[
+  {
+    "name": "ISO_CENT7_MIN",
+    "container": "container",
+    "url": "nfs://10.149.245.50/Public/bootcamp/centos7_min.iso"
+  },
+  {
+    "name": "IMG_CENT7_JPN",
+    "container": "container",
+    "url": "nfs://10.149.245.50/Public/bootcamp/centos7_jpn_raw"
+  },
+  {
+    "name": "IMG_CENT7_ENG",
+    "container": "container",
+    "url": "nfs://10.149.245.50/Public/bootcamp/centos7_eng_raw"
+  },
+  {
+    "name": "IMG_WIN2012R2_ENG",
+    "container": "container",
+    "url": "nfs://10.149.245.50/Public/bootcamp/win2012r2_eng_raw"
+  }
+]

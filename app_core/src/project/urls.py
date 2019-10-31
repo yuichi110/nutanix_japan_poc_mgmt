@@ -13,22 +13,27 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
 from django.urls import path
+
+from cluster.apis import ClusterApi
+from task.apis import TaskApi
+from ops.apis import OpsApi
 
 urlpatterns = [
     path('admin/', admin.site.urls),
 
-    path('api/clusters/', ClusterApi.clusters),
-    path('api/clusters/<str:uuid>', ClusterApi.cluster),
+    path('api/v1/clusters/', ClusterApi.clusters),
+    path('api/v1/clusters/<str:uuid>', ClusterApi.cluster),
 
-    path('api/fvms/', FvmApi.clusters),
-    path('api/fvms/<str:uuid>', FvmApi.cluster),
+    #path('api/fvms/', FvmApi.clusters),
+    #path('api/fvms/<str:uuid>', FvmApi.cluster),
 
-    path('api/tasks/', TaskApi.tasks),
-    path('api/tasks/<str:uuid>', TaskApi.task),
+    path('api/v1/tasks/', TaskApi.tasks),
+    path('api/v1/tasks/<str:uuid>', TaskApi.task),
 
-    path('api/ops/foundation/<str:uuid>', OpsApi.foundation),
-    path('api/ops/power/up/<str:uuid>', OpsApi.power_up),
-    path('api/ops/power/down/<str:uuid>', Ops.power_down),
+    path('api/v1/ops/foundation/<str:uuid>', OpsApi.foundation),
+    path('api/v1/ops/power/up/<str:uuid>', OpsApi.power_up),
+    path('api/v1/ops/power/down/<str:uuid>', OpsApi.power_down),
 ]
