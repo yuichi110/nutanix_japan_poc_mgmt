@@ -35,3 +35,19 @@ class TaskApi:
       return HttpResponse(json_text, content_type='application/json')
     except Exception as e:
       return get_error_response(e)
+
+  @classmethod
+  def tests(cls, request):
+    try:
+      d = Task.create('parent')
+      return HttpResponse(json.dumps(d), content_type='application/json')
+    except Exception as e:
+      return get_error_response(e)
+
+  @classmethod
+  def test(cls, request, uuid):
+    try:
+      d = Task.create_child('child', uuid)
+      return HttpResponse(json.dumps(d), content_type='application/json')
+    except Exception as e:
+      return get_error_response(e)

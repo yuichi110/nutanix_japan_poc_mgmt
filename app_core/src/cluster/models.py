@@ -67,28 +67,31 @@ class Cluster(models.Model):
     try:
       d = json.loads(json_text)
     except:
-      raise Exception('failed to parse json')
+      raise Exception400('failed to parse json')
 
     if 'cluster' not in d:
       raise Exception400("key 'cluster' not in json")
     if 'nodes' not in d:
-      raise Exception400("key 'cluster' not in json")
+      raise Exception400("key 'nodes' not in json")
+    if 'basics' not in d:
+      raise Exception400("key 'basics' not in json")
     if 'fvm' not in d:
       raise Exception400("key 'fvm' not in json")
     if 'eula' not in d:
       raise Exception400("key 'eula' not in json")
     if 'containers' not in d:
-      raise Exception400("key 'fvm' not in json")
+      raise Exception400("key 'containers' not in json")
     if 'networks' not in d:
-      raise Exception400("key 'fvm' not in json")
+      raise Exception400("key 'networks' not in json")
     if 'ipam_networks' not in d:
-      raise Exception400("key 'fvm' not in json")
+      raise Exception400("key 'ipam_networks' not in json")
     if 'images' not in d:
-      raise Exception400("key 'fvm' not in json")    
+      raise Exception400("key 'images' not in json")    
 
     d = {
       'cluster':cls._get_json_cluster(d['cluster']),
       'nodes':cls._get_json_nodes(d['nodes']),
+      'basics':cls._get_json_basics(d['basics']),
       'fvm':cls._get_json_fvm(d['fvm']),
       'eula':cls._get_json_eula(d['eula']),
       'containers':cls._get_json_containers(d['containers']),
@@ -108,28 +111,13 @@ class Cluster(models.Model):
       raise Exception400("key 'password' not in root.cluster")
     if 'name' not in d:
       raise Exception400("key 'name' not in root.cluster")
-    if 'netmask' not in d:
-      raise Exception400("key 'netmask' not in root.cluster")
-    if 'gateway' not in d:
-      raise Exception400("key 'gateway' not in root.cluster")
-    if 'ntp_server' not in d:
-      raise Exception400("key 'ntp_server' not in root.cluster")
-    if 'name_server' not in d:
-      raise Exception400("key 'name_server' not in root.cluster")
-    if 'language' not in d:
-      raise Exception400("key 'language' not in root.cluster")
+
 
     cluster = {
       'ip':d['ip'],
       'user':d['user'],
       'password':d['password'],
-      
       'name':d['name'],
-      'netmask':d['netmask'],
-      'gateway':d['gateway'],
-      'ntp_server':d['ntp_server'],
-      'name_server':d['name_server'],
-      'language':d['language'],
     }
     return cluster
 
@@ -167,6 +155,28 @@ class Cluster(models.Model):
       }
       nodes.append(node)
     return nodes
+
+  @classmethod
+  def _get_json_basics(cls, d):
+    if 'netmask' not in d:
+      raise Exception400("key 'netmask' not in root.cluster")
+    if 'gateway' not in d:
+      raise Exception400("key 'gateway' not in root.cluster")
+    if 'ntp_server' not in d:
+      raise Exception400("key 'ntp_server' not in root.cluster")
+    if 'name_server' not in d:
+      raise Exception400("key 'name_server' not in root.cluster")
+    if 'language' not in d:
+      raise Exception400("key 'language' not in root.cluster")
+
+    basics = {
+      'netmask':d['netmask'],
+      'gateway':d['gateway'],
+      'ntp_server':d['ntp_server'],
+      'name_server':d['name_server'],
+      'language':d['language'],    
+    }
+    return basics
 
   @classmethod
   def _get_json_fvm(cls, d):

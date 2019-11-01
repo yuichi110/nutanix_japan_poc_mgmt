@@ -32,6 +32,8 @@ urlpatterns = [
 
     path('api/v1/tasks/', TaskApi.tasks),
     path('api/v1/tasks/<str:uuid>', TaskApi.task),
+    #path('api/v1/tests/', TaskApi.tests),
+    #path('api/v1/tests/<str:uuid>', TaskApi.test),
 
     path('api/v1/ops/foundation/<str:uuid>', OpsApi.foundation),
     path('api/v1/ops/power/up/<str:uuid>', OpsApi.power_up),

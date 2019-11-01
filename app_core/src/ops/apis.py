@@ -1,6 +1,7 @@
 from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
 from common.errors import *
 from cluster.models import Cluster
+from task.models import Task
 
 from uuid import UUID
 import json
@@ -49,8 +50,9 @@ APP_NTNX_POWER_URL = 'http://{}:{}/api/v1'.format(APP_NTNX_POWER_HOST, APP_NTNX_
 class OpsApi:
 
   @classmethod
-  def foundation(cls, request, cluster_uuid):
+  def foundation(cls, request, uuid):
     try:
+      cluster_uuid = uuid
       if request.method != 'POST':
         raise Exception405('this method is not allowed')
       if not Cluster.exists(cluster_uuid):
@@ -58,30 +60,29 @@ class OpsApi:
       j = Cluster.read(cluster_uuid)
       j['credential'] = CREDENTIAL
       cluster_name = j['cluster']['name']
-      foundation_task_uuid = Task.create('foundation:' + cluster_name)
+      foundation_task_uuid = Task.create('foundation:' + cluster_name)['uuid']
 
       def fun():
-        tasks = [parent_task_uuid]
         try:
           # foundation
-          imaging_task_uuid = Task.create_child('foundation:' + cluster_name, foundation_task_uuid)
-          eula_task_uuid = Task.create_child('foundation:' + cluster_name, foundation_task_uuid)
-          setup_task_uuid = Task.create_child('foundation:' + cluster_name, foundation_task_uuid)
+          imaging_task_uuid = Task.create_child('foundation:' + cluster_name, foundation_task_uuid)['uuid']
+          eula_task_uuid = Task.create_child('foundation:' + cluster_name, foundation_task_uuid)['uuid']
+          setup_task_uuid = Task.create_child('foundation:' + cluster_name, foundation_task_uuid)['uuid']
 
           j['task_uuid'] = imaging_task_uuid
-          response = requests.post(APP_NTNX_FVM_URL + '/image/', data=json.loads(j))
+          response = requests.post(APP_NTNX_FVM_URL + '/image/', data=json.dumps(j))
           if not response.ok:
             raise Exception()
           wait_till_task_end(imaging_task_uuid)
           # eula
           j['task_uuid'] = eula_task_uuid
-          response = requests.post(APP_NTNX_EULA_URL + '/run/', data=json.loads(j))
+          response = requests.post(APP_NTNX_EULA_URL + '/run/', data=json.dumps(j))
           if not response.ok:
             raise Exception()
           wait_till_task_end(eula_task_uuid)
           # setup
           j['task_uuid'] = setup_task_uuid
-          response = requests.post(APP_NTNX_SETUP_URL + '/run/', data=json.loads(j))
+          response = requests.post(APP_NTNX_SETUP_URL + '/run/', data=json.dumps(j))
           if not response.ok:
             raise Exception()
           wait_till_task_end(setup_task_uuid)
@@ -99,21 +100,27 @@ class OpsApi:
       return get_error_response(e)
 
   @classmethod
-  def power_up(cls, request, cluster_uuid):
+  def power_up(cls, request, uuid):
     try:
       if request.method != 'POST':
         raise Exception405('this method is not allowed')
-      if not Cluster.exists(cluster_uuid):
-        raise Exception404("cluster uuid '{}' not found".format(cluster_uuid))
-      task_uuid = Task.create()
-      j = Cluster.read(cluster_uuid)
+      if not Cluster.exists(uuid):
+        raise Exception404("cluster uuid '{}' not found".format(uuid))
+
+      task_uuid = Task.create('power up')['uuid']
+      j = Cluster.read(uuid)
       j['credential'] = CREDENTIAL
       j['task_uuid'] = task_uuid
-      response = requests.post(APP_NTNX_POWER_URL + '/up/', data=json.loads(j))
+      try:
+        response = requests.post(APP_NTNX_POWER_URL + '/up/', data=json.dumps(j))
+      except:
+        response.ok = False
       if not response.ok:
         fail_task(task_uuid)
+
       d = {
-        'uuid':foundation_task_uuid
+        'uuid':task_uuid,
+        'success':response.ok
       }
       return HttpResponse(json.dumps(d), content_type='application/json')
 
@@ -121,21 +128,26 @@ class OpsApi:
       return get_error_response(e)
 
   @classmethod
-  def power_down(cls, request, cluster_uuid):
+  def power_down(cls, request, uuid):
     try:
       if request.method != 'POST':
         raise Exception405('this method is not allowed')
-      if not Cluster.exists(cluster_uuid):
-        raise Exception404("cluster uuid '{}' not found".format(cluster_uuid))
-      task_uuid = Task.create()
-      j = Cluster.read(cluster_uuid)
+      if not Cluster.exists(uuid):
+        raise Exception404("cluster uuid '{}' not found".format(uuid))
+      task_uuid = Task.create('power down')['uuid']
+      j = Cluster.read(uuid)
       j['credential'] = CREDENTIAL
       j['task_uuid'] = task_uuid
-      response = requests.post(APP_NTNX_POWER_URL + '/down/', data=json.loads(j))
+      try:
+        response = requests.post(APP_NTNX_POWER_URL + '/down/', data=json.dumps(j))
+      except:
+        response.ok = False
       if not response.ok:
         fail_task(task_uuid)
+
       d = {
-        'uuid':foundation_task_uuid
+        'uuid':task_uuid,
+        'success':response.ok
       }
       return HttpResponse(json.dumps(d), content_type='application/json')
 
