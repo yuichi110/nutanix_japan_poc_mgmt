@@ -7,21 +7,24 @@ import traceback
 import threading
 from client_fvm import NutanixFoundationClient
 
-def check(fvm, cluster, aos_version, report_server):
+def check(cluster, nodes, basics, fvm, foundation, report_server):
   def fun():
     try:
-      ops = FvmOps(fvm, cluster, aos_version, report_server)
+      print('check: start')
+      ops = FvmOps(cluster, nodes, basics, fvm, foundation, report_server)
       ops.connect_to_fvm()
       ops.check_ipmi_mac()
       ops.check_ipmi_ip()
+      print('check: complete')
     except Exception as e:
       print(e)
   threading.Thread(target=fun).start()
 
-def image(fvm, cluster, aos_version, report_server):
+def image(cluster, nodes, basics, fvm, foundation, report_server):
   def fun():
     try:
-      ops = FvmOps(fvm, cluster, aos_version, report_server)
+      print('image: start')
+      ops = FvmOps(cluster, nodes, basics, fvm, foundation, report_server)
       ops.connect_to_fvm()
       ops.check_ipmi_mac()
       ops.check_ipmi_ip()
@@ -30,6 +33,7 @@ def image(fvm, cluster, aos_version, report_server):
       ops.pre_check()
       ops.start_foundation()
       ops.poll_progress()
+      print('image: complete')
     except Exception as e:
       print(e)
   threading.Thread(target=fun).start()
@@ -42,34 +46,37 @@ def abort(fvmip, user, password):
 
 class FvmOps:
 
-  def __init__(self, fvm, cluster, aos_version, report_server):
-    try:
-      if aos_version not in fvm["nos_packages"]:
-        raise Exception()
-    except:
-      raise ErrorException('fvm json doesn not have aos_version "{}"'.format(aos_version))
-
+  def __init__(self, cluster, nodes, basics, fvm, foundation, report_server):
+    print('fvm ops created')
     self.fvm = fvm
-    self.cluster = cluster
-    self.aos_version = aos_version
-    self.nos_package = fvm["nos_packages"][aos_version]
+    self.nodes = nodes
     self.report_server = report_server
 
-    self.netmask = cluster['netmask']
-    self.gateway = cluster['gateway']
+    self.external_ip = cluster['ip']
     self.cluster_name = cluster['name']
-    self.external_ip = cluster['external_ip']
-    self.name_server = cluster['name_server']
-    self.ntp_server = cluster['ntp_server']
+    self.netmask = basics['netmask']
+    self.gateway = basics['gateway']
+    self.name_server = basics['name_server']
+    self.ntp_server = basics['ntp_server']
+    self.aos_version = foundation['aos_version']
+    self.nos_package = ''
+    for nos_package in fvm["nos_packages"]:
+      if nos_package['version'] == self.aos_version:
+        self.nos_package = nos_package['file']
+    if self.nos_package == '':
+      raise Exception('choosed aos image does not exist.')
 
-    def get_nodeinfo_list(cluster):
+    def get_nodeinfo_list(nodes):
       nodeinfo_list = []
-      for node in cluster['nodes']:
+      for node in nodes:
         nodeinfo = (node['ipmi_mac'], node['ipmi_ip'], node['host_ip'],
           node['cvm_ip'], node['host_name'], node['position'])
         nodeinfo_list.append(nodeinfo)
       return nodeinfo_list
-    self.nodeinfo_list = get_nodeinfo_list(cluster)
+    self.nodeinfo_list = get_nodeinfo_list(nodes)
+    print(self.nodeinfo_list)
+
+    print('fvm ops initialize completed')
 
   def send_report(self):
     if not self.report_server['send']:
@@ -115,7 +122,7 @@ class FvmOps:
   def check_ipmi_mac(self):   
     print('check_ipmi_mac()')
     problem_mac_list = []
-    for node in self.cluster['nodes']:
+    for node in self.nodes:
       position = node['position'].upper()
       print('node position: {}'.format(position))
 
@@ -135,7 +142,7 @@ class FvmOps:
   def check_ipmi_ip(self):
     print('check_ipmi_ip()')
     problem_ip_list = []
-    for node in self.cluster['nodes']:
+    for node in self.nodes:
       position = node['position'].upper()
       print('node position: {}'.format(position))
       

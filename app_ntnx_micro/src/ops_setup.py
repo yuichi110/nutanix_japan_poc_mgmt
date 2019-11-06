@@ -1,16 +1,15 @@
 import json
 import sys
-import logging
 import threading
 import time
 import os
 import traceback
 from client_setup import NutanixSetupClient
 
-def run(cluster, containers, networks, ipam_networks, images):
+def run(cluster, basics, containers, networks, ipam_networks, images, report_server):
   def fun():
     try:
-      ops = SetupOps(cluster, containers, networks, ipam_networks, images)
+      ops = SetupOps(cluster, basics, containers, networks, ipam_networks, images, report_server)
       ops.connect_to_prism()
       ops.set_language()
       ops.delete_unused_containers()
@@ -24,12 +23,12 @@ def run(cluster, containers, networks, ipam_networks, images):
   threading.Thread(target=fun).start()
 
 class SetupOps:
-  def __init__(self, cluster, containers, networks, ipam_networks, images):
+  def __init__(self, cluster, basics, containers, networks, ipam_networks, images, report_server):
     self.session = None
     self.ip =       cluster['ip']
     self.user =     cluster['user']
     self.password = cluster['password']
-    self.language = cluster['language']
+    self.language = basics['language']
 
     self.containers = containers
     self.networks =   networks

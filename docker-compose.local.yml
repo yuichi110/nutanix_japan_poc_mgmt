@@ -37,6 +37,7 @@ services:
       DB_PASSWORD: password
       MICRO_APP_USER: user
       MICRO_APP_PASSWORD: password
+      APP_CORE_HOST: app_core
       APP_NTNX_FVM_HOST: app_ntnx_fvm
       APP_NTNX_FVM_PORT: 80
       APP_NTNX_EULA_HOST: app_ntnx_eula

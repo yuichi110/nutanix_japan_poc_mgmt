@@ -23,6 +23,13 @@ class TaskApi:
       return json.dumps(Task.read(uuid))
       
     def put():
+      '''
+      {
+        'progress': 100,
+        'status': "test status",
+        'failed': False
+      }
+      '''
       return json.dumps(Task.update(uuid, request.body.decode()))
 
     def delete():

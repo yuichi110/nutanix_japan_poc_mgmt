@@ -7,32 +7,35 @@ import os
 import traceback
 from client_eula import NutanixEulaClient
 
-def run(eula):
+def run(cluster, eula, report_server):
   def fun():
     try:
-      ops = EulaOps(eula)
+      print('run: start')
+      ops = EulaOps(cluster, eula, report_server)
       ops.set_temporary_password()
       ops.connect_to_prism()
       ops.set_eula()
       ops.set_initial_pulse()
       ops.set_initial_alert()
       ops.change_password()
+      print('run: end')
     except Exception as e:
-      print(e)
+      print('failed with error: {}'.format(e))
   threading.Thread(target=fun).start()
 
 class EulaOps:
-  def __init__(self, eula):
+  def __init__(self, cluster, eula, report_server):
     self.INITIAL_PASSWORD = 'nutanix/4u'
     self.TEMPORARY_PASSWORD = 'DevOpsTeam4Eva!'
     
     self.session =      None
-    self.ip =           eula['ip']
-    self.user =         eula['user']
-    self.password =     eula['password']
-    self.eula_name =    eula['eula_name']
-    self.eula_company = eula['eula_company']
-    self.eula_title =   eula['eula_title']
+    self.ip =           cluster['ip']
+    self.user =         cluster['user']
+    self.password =     cluster['password']
+
+    self.eula_user =    eula['user']
+    self.eula_company = eula['company']
+    self.eula_title =   eula['title']
     self.enable_pulse = eula['enable_pulse']
 
   def set_temporary_password(self):
@@ -59,8 +62,8 @@ class EulaOps:
 
   def set_eula(self):
     print('set_eula()')
-    print('name={}, company={}, title={}'.format(self.eula_name, self.eula_company, self.eula_title))
-    (success, result) = self.session.set_eula(self.eula_name, self.eula_company, self.eula_title)
+    print('user={}, company={}, title={}'.format(self.eula_user, self.eula_company, self.eula_title))
+    (success, result) = self.session.set_eula(self.eula_user, self.eula_company, self.eula_title)
     if not success:
       error = "set eula failed. reason '{}'".format(result['error'])
       print(error)

@@ -60,8 +60,6 @@ class Base:
         response = self.session.get('https://{}:9440/api/nutanix/v0.8{}'.format(self.session.ip, url), timeout=self.TIMEOUT)
         break
       except RequestException as e:
-        logger.error(e)
-        logger.error('retly')
         attempts += 1
 
     if not response.ok:

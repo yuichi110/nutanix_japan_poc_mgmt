@@ -9,14 +9,33 @@ def test():
   print(response.text)
 
 d = {
-  'user': USER,
-  'password': PASSWORD,
+  'credential': {
+    'user': USER,
+    'password': PASSWORD,
+  },
+
+  'report_server': {
+    'send': False,
+    'host': '127.0.0.1',
+    'port': 8080,
+    'user': 'micro_servers',
+    'password': 'hello',
+    'uuid': '1234567890'
+  },
 
   'cluster': {
-    'ip':           '10.149.160.41',
-    'user':         'admin',
-    'password':     'Nutanix/4u!',
-    'language':     'ja-JP'
+    'ip': '10.149.160.41',
+    'user': 'admin',
+    'password': 'Nutanix/4u!',
+    'name': 'poc18',  
+  },
+
+  'basics': {
+    'gateway': '10.149.160.1',
+    'netmask': '255.255.252.0',
+    'ntp_server': 'ntp.nict.jp',
+    'name_server': '8.8.8.8',
+    'language': 'ja-jp'
   },
 
   'containers': [

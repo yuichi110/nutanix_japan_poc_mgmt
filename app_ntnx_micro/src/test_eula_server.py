@@ -9,19 +9,33 @@ def test():
   print(response.text)
 
 d = {
-  'user': USER,
-  'password': PASSWORD,
+  'credential': {
+    'user': USER,
+    'password': PASSWORD,
+  },
+
+  'report_server': {
+    'send': False,
+    'host': '127.0.0.1',
+    'port': 8080,
+    'user': 'micro_servers',
+    'password': 'hello',
+    'uuid': '1234567890'
+  },
+
+  'cluster': {
+    'ip': '10.149.160.41',
+    'user': 'admin',
+    'password': 'Nutanix/4u!',
+    'name': 'poc18',  
+  },
 
   'eula': {
-    'ip':           '10.149.160.41',
-    'user':         'admin',
-    'password':     'Nutanix/4u!',
-    'eula_name':    'Yuichi Ito',
-    'eula_company': 'Nutanix',
-    'eula_title':   'DevOps Specialist',
-    'enable_pulse': False,
-  }
-
+    'user': 'Yuichi Ito',
+    'company': 'Nutanix',
+    'title': 'Specialist',
+    'enable_pulse': False
+  },
 }
 body = json.dumps(d)
 

@@ -106,6 +106,7 @@ d = {
     'user': 'Yuichi Ito',
     'company': 'Nutanix',
     'title': 'Specialist',
+    'enable_pulse': False
   },
 
   'containers': [

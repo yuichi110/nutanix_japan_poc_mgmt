@@ -153,14 +153,50 @@ class Vms:
   def delete_vm(self, name):
     return (False, {'error':'Error. Not supported now.'})
 
-  def poweron_vm(self, name):
-    return (False, {'error':'Error. Not supported now.'})
+  def get_poweredon_vms(self):
+    error_dict = {}
+    try:
+      response_dict = self.get_v2('/vms/?include_vm_disk_config=true&include_vm_nic_config=true', error_dict)
+      uuids = []
+      for vm in response_dict['entities']:
+        state = vm['power_state'].lower()
+        if state == 'on':
+          uuids.append(vm['uuid'])
+      return (True, uuids)
 
-  def poweroff_vm(self, name):
-    return (False, {'error':'Error. Not supported now.'})
+    except Exception as exception:
+      self.handle_error(exception, error_dict)
+      return (False, error_dict)
 
-  def shutdown_vm(self, name):
-    return (False, {'error':'Error. Not supported now.'})
+  def poweron_vm(self, uuid):
+    error_dict = {}
+    try:
+      d = {"transition":"on"}
+      response_dict = self.post_v2('/vms/{}/set_power_state'.format(uuid), d, error_dict)
+      return (True, response_dict)
+    except Exception as exception:
+      self.handle_error(exception, error_dict)
+      return (False, error_dict)
+
+  def poweroff_vm(self, uuid):
+    error_dict = {}
+    try:
+      d = {"transition":"off"}
+      response_dict = self.post_v2('/vms/{}/set_power_state'.format(uuid), d, error_dict)
+      return (True, response_dict)
+    except Exception as exception:
+      self.handle_error(exception, error_dict)
+      return (False, error_dict)
+
+  def shutdown_vm(self, uuid):
+    error_dict = {}
+    try:
+      d = {"transition":"acpi_shutdown"}
+      response_dict = self.post_v2('/vms/{}/set_power_state'.format(uuid), d, error_dict)
+      return (True, response_dict)
+    except Exception as exception:
+      self.handle_error(exception, error_dict)
+      return (False, error_dict)
 
   def snapshot_vm(self, vm_name, snapshot_name):
     return (False, {'error':'Error. Not supported now.'})

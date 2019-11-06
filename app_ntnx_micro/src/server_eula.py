@@ -1,69 +1,34 @@
 import os, json, re
 import ops_eula
+import nutanix_serializer as ns
+from server_base import *
 from flask import Flask, jsonify, request
 
-PORT = int(os.environ['PORT'])
-USER = os.environ['USER']
-PASSWORD = os.environ['PASSWORD']
+try:
+  PORT = int(os.environ['PORT'])
+  USER = os.environ['USER']
+  PASSWORD = os.environ['PASSWORD']
+except:
+  PORT = 8082
+  USER = 'user'
+  PASSWORD = 'password'
 
 app = Flask('')
 
 @app.route('/api/v1/run/', methods=['POST'])
 def api_eula():
   try:
-    d = get_normalized_json(request.get_data().decode())
-    ops_eula.run(d)
+    try:
+      d = ns.Eula.loads(request.get_data().decode())
+    except Exception as e:
+      raise FormatException(str(e))
+    check_credential(USER, PASSWORD, d)
+    cluster = d['cluster']
+    eula = d['eula']
+    report_server = d['report_server']
+    ops_eula.run(cluster, eula, report_server)
     return (jsonify({}), 200)
   except Exception as e:
     return handle_error(e)
-
-def get_normalized_json(body):
-  try:
-    d = json.loads(body)
-  except Exception as e:
-    raise FormatException(str(e))
-
-  try:
-    d['user']
-    d['password']
-  except Exception as e:
-    raise FormatException(str(e))
-
-  if d['user'] != USER:
-    raise AuthException('user name wrong')
-  if d['password'] != PASSWORD:
-    raise AuthException('password is wrong')
-
-  try:
-    nd = {
-      'ip':           d['eula']['ip'],
-      'user':         d['eula']['user'],
-      'password':     d['eula']['password'],
-      'eula_name':    d['eula']['eula_name'],
-      'eula_company': d['eula']['eula_company'],
-      'eula_title':   d['eula']['eula_title'],
-      'enable_pulse': d['eula']['enable_pulse'],
-    }
-  except Exception as e:
-    raise FormatException(str(e))
-
-  return nd
-
-def handle_error(e):
-  print(e)
-  if isinstance(e, AuthException):
-    d = {'error': "user name or password is invalid. reason '{}'".format(e)}
-    return (jsonify(d), 403)
-  if isinstance(e, FormatException):
-    d = {'error': "json body has problem. reason '{}'".format(e)}
-    return (jsonify(d), 400)
-  d = {'error': "unexpected error. reason '{}'".format(e)}
-  return (jsonify(d), 500) 
-
-class AuthException(Exception):
-  pass
-
-class FormatException(Exception):
-  pass
 
 app.run(debug=False, host='0.0.0.0', port=PORT)
