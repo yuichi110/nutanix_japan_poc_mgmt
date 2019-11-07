@@ -1,33 +1,26 @@
-from ops_power import *
-import paramiko
+import requests, json
+
+URL_BASE = 'http://127.0.0.1:8084/api/v1'
+USER = 'user'
+PASSWORD = 'password'
 
 def test():
-  test_down()
+  test_up()
 
 def test_up():
-  ops = PowerOps(d['cluster'], d['nodes'], d['report_server'])
-  ops.up_all_host()
-  ops.wait_till_all_host_becoming_accesible()
-  ops.wait_till_all_cvm_up()
-  ops.wait_till_all_cvm_accessible()
-  ops.up_cluster()
+  response = requests.post(URL_BASE + '/up/', data=body)
+  print(response.text)
 
 def test_down():
-  ops = PowerOps(d['cluster'], d['nodes'], d['report_server'])
-  if ops.is_all_cvm_down():
-    print('all cvms are already down')
-    if ops.is_all_host_down():
-      pass
-    else:
-      ops.down_all_hosts()
-  else:
-    if ops.is_cluster_up():
-      ops.down_over_cluster()
-      ops.down_cluster()
-    ops.down_all_cvms()
-    ops.down_all_hosts()
+  response = requests.post(URL_BASE + '/down/', data=body)
+  print(response.text)
 
 d = {
+  'credential': {
+    'user': USER,
+    'password': PASSWORD,
+  },
+
   'report_server': {
     'send': False,
     'host': '127.0.0.1',
@@ -103,6 +96,7 @@ d = {
     }
   ]
 }
+body = json.dumps(d)
 
 if __name__ == '__main__':
   test()

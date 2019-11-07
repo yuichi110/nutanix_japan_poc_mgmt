@@ -4,97 +4,383 @@ import logging
 import time
 import os
 import traceback
-from client_power import NutanixPowerClient
+import threading
+from server_base import send_report, send_fail_report
+from client_power import NutanixPowerClient, NutanixClusterClient
 
-def up():
+def up(cluster, nodes, report_server):
   def fun():
     try:
+      a, b, c, d, e, f, g = 0, 0, 0, 0, 0, 0, 0
+      send_report(report_server, 0, get_up_status(a, b, c, d, e, f, g))
       ops = PowerOps(cluster, nodes, report_server)
-      ops.all_host_up()
-      ops.cluster_up()
+      a = 1
+      send_report(report_server, 10, get_up_status(a, b, c, d, e, f, g))
+      ops.up_all_host()
+      b = 1
+      send_report(report_server, 20, get_up_status(a, b, c, d, e, f, g))
+      ops.wait_till_all_host_becoming_accesible()
+      c = 1
+      send_report(report_server, 40, get_up_status(a, b, c, d, e, f, g))
+      ops.wait_till_all_cvm_up()
+      d = 1
+      send_report(report_server, 60, get_up_status(a, b, c, d, e, f, g))
+      ops.wait_till_all_cvm_accessible()
+      e = 1
+      f = 1
+      send_report(report_server, 80, get_up_status(a, b, c, d, e, f, g))
+      ops.up_cluster()
+      g = 1
+      send_report(report_server, 100, get_up_status(a, b, c, d, e, f, g))
     except Exception as e:
       print(e)
   threading.Thread(target=fun).start()
 
-def down():
+def get_up_status(a, b, c, d, e, f, g):
+  s = {
+    0: '',
+    1: 'Done',
+    2: 'Skip',
+  }
+  up_status = '''power on all host: {}
+all hosts are up: {}
+all hosts are accessible: {}
+all cvm are up: {}
+all cvm are accessible: {}
+initiate cluster start: {}
+cluster is up: {}
+'''
+  return up_status.format(s[a], s[b], s[c], s[d], s[e], s[f], s[g])
+
+
+def down(cluster, nodes, report_server):
   def fun():
     try:
+      a, b, c, d, e, f, g = 0, 0, 0, 0, 0, 0, 0
       ops = PowerOps(cluster, nodes, report_server)
-      ops.all_guestvms_down()
-      ops.cluster_down()
-      ops.all_cvm_down()
-      ops.all_host_down()
+      if ops.is_all_cvm_down():
+        
+        print('all cvms are already down')
+        if ops.is_all_host_down():
+          a, b, c, d, e, f, g = 2, 2, 2, 2, 2, 2, 2
+          send_report(report_server, 100, get_down_status(a, b, c, d, e, f, g))
+        else:
+          a, b, c, d, e, f = 2, 2, 2, 2, 2, 1
+          send_report(report_server, 80, get_down_status(a, b, c, d, e, f, g))
+          ops.down_all_hosts()
+          g = 1
+          send_report(report_server, 100, get_down_status(a, b, c, d, e, f, g))
+
+      else:
+        if ops.is_cluster_up():
+          send_report(report_server, 0, get_down_status(a, b, c, d, e, f, g))
+          ops.down_over_cluster()
+          a = 1
+          b = 1
+          send_report(report_server, 30, get_down_status(a, b, c, d, e, f, g))
+          ops.down_cluster()
+          c = 1
+        else:
+          a, b, c = 2, 2, 2
+        d = 1
+        send_report(report_server, 60, get_down_status(a, b, c, d, e, f, g))
+        ops.down_all_cvms()
+        e = 1
+        f = 1
+        send_report(report_server, 80, get_down_status(a, b, c, d, e, f, g))
+        ops.down_all_hosts()
+        g = 1
+        send_report(report_server, 100, get_down_status(a, b, c, d, e, f, g))
     except Exception as e:
       print(e)
   threading.Thread(target=fun).start()
+
+def get_down_status(a, b, c, d, e, f, g):
+  s = {
+    0: '',
+    1: 'Done',
+    2: 'Skip',
+  }
+  down_status = '''shutdown guest vms: {}
+initiate stopping cluster: {}
+cluster is stop: {}
+initiate stopping all cvms: {}
+cvms are stop: {}
+initiate stopping all hosts: {}
+hosts are stop: {}
+'''
+  return down_status.format(s[a], s[b], s[c], s[d], s[e], s[f], s[g])
 
 
 class PowerOps:
-  def __init__(self, cluster, nodes):
-    self.session = None
+  def __init__(self, cluster, nodes, report_server):
     self.ip =       cluster['ip']
     self.user =     cluster['user']
     self.password = cluster['password']
+    self.nodes = nodes
+    self.session = NutanixPowerClient()
 
-  def all_host_up(self):
+  ###
+  ## Check
+  ###
+
+  def is_all_host_down(self):
+    all_down = True
+    for node in self.nodes:
+      ipmi_ip = node['ipmi_ip']
+      ipmi_user = node['ipmi_user']
+      ipmi_password = node['ipmi_password']
+      (success, is_down) = self.session.is_host_down(ipmi_ip, ipmi_user, ipmi_password)
+      if not success:
+        raise Exception('error happens')
+      print('host {} is down:{}'.format(node['host_ip'], is_down))
+      if not is_down:
+        all_down = False
+    return all_down
+
+  def is_all_host_up(self):
+    all_up = True
+    for node in self.nodes:
+      ipmi_ip = node['ipmi_ip']
+      ipmi_user = node['ipmi_user']
+      ipmi_password = node['ipmi_password']
+      (success, is_down) = self.session.is_host_down(ipmi_ip, ipmi_user, ipmi_password)
+      if not success:
+        raise Exception('error happens')
+      print('host {} is down:{}'.format(node['host_ip'], is_down))
+      if is_down:
+        all_up = False
+    return all_up
+
+  def is_all_host_accessible(self):
+    all_accessible = True
+    for node in self.nodes:
+      host_ip = node['host_ip']
+      host_user = node['host_user']
+      host_password = node['host_password']
+      (_, accessible) = self.session.is_host_accessible(host_ip, host_user, host_password)
+      print('host {} is accessible:{}'.format(host_ip, accessible))
+      if not accessible:
+        all_accessible = False
+    return all_accessible
+
+  def is_all_cvm_down(self):
+    all_down = True
+    for node in self.nodes:
+      host_ip = node['host_ip']
+      host_user = node['host_user']
+      host_password = node['host_password']
+      (success, is_down) = self.session.is_cvm_down(host_ip, host_user, host_password)
+      if not success:
+        raise Exception('error happens')
+      print('cvm {} is down:{}'.format(node['cvm_ip'], is_down))
+      if not is_down:
+        all_down = False
+    return all_down
+
+  def is_all_cvm_up(self):
+    all_up = True
+    for node in self.nodes:
+      host_ip = node['host_ip']
+      host_user = node['host_user']
+      host_password = node['host_password']
+      (success, is_down) = self.session.is_cvm_down(host_ip, host_user, host_password)
+      if not success:
+        raise Exception('error happens')
+      print('cvm {} is down:{}'.format(node['cvm_ip'], is_down))
+      if is_down:
+        all_up = False
+        break
+    return all_up
+
+  def is_all_cvm_accessible(self):
+    all_accessible = True
+    for node in self.nodes:
+      cvm_ip = node['cvm_ip']
+      cvm_user = node['cvm_user']
+      cvm_password = node['cvm_password']
+      (_, accessible) = self.session.is_host_accessible(cvm_ip, cvm_user, cvm_password)
+      print('cvm {} is accessible:{}'.format(cvm_ip, accessible))
+      if not accessible:
+        all_accessible = False
+    return all_accessible
+
+  def is_cluster_down(self):
+    for node in self.nodes:
+      ip = node['cvm_ip']
+      user = node['cvm_user']
+      password = node['cvm_password']
+      (success, down) = self.session.is_cluster_down(ip, user, password)
+      if not success:
+        continue
+      return down
+
+    # failed to get cluster status from all cvms.
+    # judge cluster is down 
+    return True
+
+  def is_cluster_up(self):
+    return not self.is_cluster_down()
+
+
+  ###
+  ## UP
+  ###
+
+  def up_all_host(self):
+    print('up_all_host()')
     for i in range(5):
-      if self.session.is_all_server_power_on():
+      if self.is_all_host_up():
         return
       for node in self.nodes:
         ipmi_ip = node['ipmi_ip']
         ipmi_user = node['ipmi_user']
         ipmi_password = node['ipmi_password']
-        self.session.power_on_server(ipmi_ip, ipmi_user, ipmi_password)
+        host_ip = node['host_ip']
+        print('power on host {} through ipmi'.format(host_ip))
+        (success, _) = self.session.up_host(ipmi_ip, ipmi_user, ipmi_password)
+        if not success:
+          print('failed to power on host: {}'.format(host_ip))
       time.sleep(20)
-    raise Exception("Unable to power on servers via IPMI.")
+    raise Exception("Unable to power on hosts via IPMI.")
 
-  def cluster_up(self):
-    for i in range(30):
-      try:
-        self.session.is_clusterup(self.prism_ip, self.prism_user, self.prism_password)
+  def wait_till_all_host_becoming_accesible(self):
+    print('wait_till_all_host_becoming_accesible()')
+    for i in range(60):
+      if self.is_all_host_accessible():
         return
+      print('waiting all host become accessible. {}/60'.format(i))
+      time.sleep(5)
+    raise Exception("Failed to see all CVMs are up")
+
+  def wait_till_all_cvm_up(self):
+    print('wait_till_all_cvm_up()')
+    for i in range(12):
+      try:
+        if self.is_all_cvm_up():
+          return
       except:
-        self.session.clusterup(self.cvm_ips[0], 'nutanix', 'nutanix/4u')
+        pass
+      print('waiting all cvm up. {}/12'.format(i))
+      time.sleep(5)
+    raise Exception("Failed to see all CVMs are up")
+
+  def wait_till_all_cvm_accessible(self):
+    print('wait_till_all_cvm_accessible()')
+    for i in range(24):
+      try:
+        if self.is_all_cvm_accessible():
+          return
+      except:
+        pass
+      print('waiting all cvm become accessible. {}/24'.format(i))
+      time.sleep(5)
+    raise Exception("Failed to see all CVMs are up")
+
+  def up_cluster(self):
+    print('up_cluster()')
+    node = self.nodes[0]
+    ip = node['cvm_ip']
+    user = node['cvm_user']
+    password = node['cvm_password']
+
+    for i in range(30):
+      (success, is_down) = self.session.is_cluster_down(ip, user, password)
+      if success:
+        if not is_down:
+          return
+        else:
+          self.session.up_cluster(ip, user, password)
       time.sleep(10)
     raise Exception("failed to start cluster")
 
-  def all_guestvm_down(self):
+
+  ####
+  ## Down Over Cluster
+  ####
+
+  def down_over_cluster(self):
+    print('down_over_cluster()')
+    self.down_all_guestvms()
+
+  def down_all_guestvms(self):
+    print('down_all_guestvms()')
+    client = NutanixClusterClient(self.ip, self.user, self.password)
     for i in range(6):
       try:
-        vm_uuids = self.client.get_poweredon_vms()
+        (_, vm_uuids) = client.get_poweredon_vms()
         if len(vm_uuids) == 0:
           return
-
+        else:
+          print('power on vms: {}'.format(vm_uuids))
         for vm_uuid in vm_uuids:
           if i<5:
-            self.client.shutdown_vm(vm_uuid)
+            client.shutdown_vm(vm_uuid)
           else:
-            self.client.poweroff_vm(vm_uuid)
+            client.poweroff_vm(vm_uuid)
       except:
         pass
       time.sleep(10)
 
     raise Exception('failed to off all vms')
 
-  def cluster_down(self):
-    cluster_stop(self.cvm_list[0])
-    for i in range(10):
-      is_cluster_stop(self.cvm_list[0])
-      time.sleep(5)
+  def down_cluster(self):
+    print('down_cluster()')
+    if self.is_cluster_down():
+      return
 
-  def all_cvm_down(self):
-    for cvm_ip in self.cvm_list:
-      cvm_stop(cvm_ip)
+    for node in self.nodes:
+      cvm_ip = self.nodes[0]['cvm_ip']
+      cvm_user = self.nodes[0]['cvm_user']
+      cvm_password = self.nodes[0]['cvm_password']
+      (success, _) = self.session.down_cluster(cvm_ip, cvm_user, cvm_password)
+      if success:
+        break
 
-    for i in range(10):
-      all_down = True
-      for host_ip in self.host_list:
-        if not is_cvm_stop(host_ip):
-          all_down = False
-      if all_down:
+    for i in range(12):
+      if self.is_cluster_down():
+        time.sleep(10)
         return
       time.sleep(5)
+    raise Exception('failed to stop cluster')
 
-  def all_host_down(self):
-    for host_ip in self.host_list:
-      stop_host(host_ip)
+  def down_all_cvms(self):
+    print('down_all_cvms()')
+    for node in self.nodes:
+      cvm_ip = node['cvm_ip']
+      cvm_user = node['cvm_user']
+      cvm_password = node['cvm_password']
+      (success, _) = self.session.down_cvm(cvm_ip, cvm_user, cvm_password)
+      print('cvm {} down request success:{}'.format(cvm_ip, success))
+
+    for i in range(36):
+      if self.is_all_cvm_down():
+        return
+      print('waiting all cvms are down {}/36'.format(i))
+      time.sleep(5)
+    raise Exception('failed to down all cvms')
+
+  def down_all_hosts(self):
+    print('down_all_hosts()')
+    for node in self.nodes:
+      host_ip = node['host_ip']
+      host_user = node['host_user']
+      host_password = node['host_password']
+      (success, _) = self.session.down_host(host_ip, host_user, host_password)
+      print('host {} down request success:{}'.format(host_ip, success))
+
+    for i in range(24):
+      if self.is_all_host_down():
+        return
+      print('waiting all hosts are down {}/24'.format(i))
+      time.sleep(5)
+
+    self.down_all_hosts_force()
+
+  def down_all_hosts_force(self):
+    print('down_all_hosts_force()')
+    for node in self.nodes:
+      ipmi_ip = node['ipmi_ip']
+      ipmi_user = node['ipmi_user']
+      ipmi_password = node['ipmi_password']
+      self.session.down_host_force(ipmi_ip, ipmi_user, ipmi_password)

@@ -157,6 +157,35 @@ class Setup:
     }
     return nd
 
+class Power:
+  @classmethod
+  def dumps(cls, original):
+    if type(original) == dict:
+      original = json.dumps(original)
+    d = cls.loads(original)
+    return json.dumps(d)
+
+  @classmethod
+  def loads(cls, s):
+    try:
+      d = json.loads(s)
+    except:
+      raise Exception('failed to parse json')
+    if 'cluster' not in d:
+      raise Exception("key 'cluster' not in json")
+    if 'nodes' not in d:
+      raise Exception("key 'nodes' not in json")
+    if 'credential' not in d:
+      raise Exception("key 'credential' not in json") 
+    if 'report_server' not in d:
+      raise Exception("key 'report_server' not in json")
+    nd = {
+      'cluster':_get_json_cluster(d['cluster']),
+      'nodes':_get_json_nodes(d['nodes']),
+      'credential':_get_json_credential(d['credential']),
+      'report_server':_get_json_report_server(d['report_server'])
+    }
+    return nd
 
 #####
 ## Utility
@@ -207,7 +236,7 @@ def _get_json_nodes(d):
       'host_user': elem.get('host_user', 'root'),
       'host_password': elem.get('host_password', 'nutanix/4u'),
       'cvm_user': elem.get('cvm_user', 'nutanix'),
-      'cvm_password': elem.get('nutanix/4u')
+      'cvm_password': elem.get('cvm_password', 'nutanix/4u')
     }
     nodes.append(node)
   return nodes

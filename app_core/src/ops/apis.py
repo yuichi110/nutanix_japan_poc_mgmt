@@ -129,11 +129,12 @@ class OpsApi:
         raise Exception404("cluster uuid '{}' not found".format(uuid))
 
       task_uuid = Task.create('power up')['uuid']
-      j = Cluster.read(uuid)
-      j['credential'] = CREDENTIAL
-      j['task_uuid'] = task_uuid
+      cluster_json = Cluster.read(uuid)
+      cluster_json['credential'] = CREDENTIAL
+      cluster_json['report_server'] = get_report_server(task_uuid)
       try:
-        response = requests.post(APP_NTNX_POWER_URL + '/up/', data=json.dumps(j))
+        body = ns.Power.dumps(cluster_json)
+        response = requests.post(APP_NTNX_POWER_URL + '/up/', data=body)
       except:
         response.ok = False
       if not response.ok:
@@ -156,11 +157,13 @@ class OpsApi:
       if not Cluster.exists(uuid):
         raise Exception404("cluster uuid '{}' not found".format(uuid))
       task_uuid = Task.create('power down')['uuid']
-      j = Cluster.read(uuid)
-      j['credential'] = CREDENTIAL
-      j['task_uuid'] = task_uuid
+      task_uuid = Task.create('power up')['uuid']
+      cluster_json = Cluster.read(uuid)
+      cluster_json['credential'] = CREDENTIAL
+      cluster_json['report_server'] = get_report_server(task_uuid)
       try:
-        response = requests.post(APP_NTNX_POWER_URL + '/down/', data=json.dumps(j))
+        body = ns.Power.dumps(cluster_json)
+        response = requests.post(APP_NTNX_POWER_URL + '/down/', data=body)
       except:
         response.ok = False
       if not response.ok:

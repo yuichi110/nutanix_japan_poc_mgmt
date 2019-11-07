@@ -1,5 +1,6 @@
 import json
 import requests
+from flask import jsonify
 
 def check_credential(user, password, d):
   if d['credential']['user'] != user:
@@ -21,6 +22,16 @@ def handle_error(e):
 def send_report(report_server, progress, message):
   if not report_server['send']:
     return
+  progress = int(progress)
+  if progress < 0:
+    print('progress must be <0')
+    return
+  if progress > 100:
+    print('progress must be >100')
+    return
+
+  #print(progress)
+  #print(message)
 
   try:
     url = 'http://{}:{}/api/v1/tasks/{}'.format(
@@ -28,11 +39,10 @@ def send_report(report_server, progress, message):
     d = {
       'user': report_server['user'],
       'password': report_server['password'],
-      'failed': False,
       'progress': progress,
       'status': message
     }
-    response = requests.post(url, data=json.dumps(d))
+    response = requests.put(url, data=json.dumps(d))
     if not response.ok:
       raise Exception('got failed response from report server. {}'.format(response.text))
   except Exception as e:

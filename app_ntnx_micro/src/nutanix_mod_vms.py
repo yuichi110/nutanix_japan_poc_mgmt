@@ -156,7 +156,7 @@ class Vms:
   def get_poweredon_vms(self):
     error_dict = {}
     try:
-      response_dict = self.get_v2('/vms/?include_vm_disk_config=true&include_vm_nic_config=true', error_dict)
+      response_dict = self.get_v2('/vms/', error_dict)
       uuids = []
       for vm in response_dict['entities']:
         state = vm['power_state'].lower()
