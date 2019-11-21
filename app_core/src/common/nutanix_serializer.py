@@ -78,7 +78,7 @@ class Foundation:
       'nodes':_get_json_nodes(d['nodes']),
       'basics':_get_json_basics(d['basics']),
       'fvm':_get_json_fvm(d['fvm']),
-      'foundation':_get_json_foundation(d['foundation']),
+      'foundation':get_json_foundation(d['foundation']),
       'credential':_get_json_credential(d['credential']),
       'report_server':_get_json_report_server(d['report_server'])
     }
@@ -186,6 +186,18 @@ class Power:
       'report_server':_get_json_report_server(d['report_server'])
     }
     return nd
+
+#####
+## Public functions
+#####
+
+def get_json_foundation(d):
+  if 'aos_version' not in d:
+    raise Exception("key 'aos_version' not in root.foundation{}")
+  foundation = {
+    'aos_version': d['aos_version']
+  }
+  return foundation
 
 #####
 ## Utility
@@ -397,14 +409,6 @@ def _get_json_credential(d):
     'password': d['password']
   }
   return credential
-
-def _get_json_foundation(d):
-  if 'aos_version' not in d:
-    raise Exception("key 'aos_version' not in root.foundation{}")
-  foundation = {
-    'aos_version': d['aos_version']
-  }
-  return foundation
 
 def _get_json_report_server(d):
   if 'host' not in d:

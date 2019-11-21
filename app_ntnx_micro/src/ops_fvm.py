@@ -5,38 +5,112 @@ import time
 import os
 import traceback
 import threading
+from server_base import send_report, send_fail_report
 from client_fvm import NutanixFoundationClient
 
 def check(cluster, nodes, basics, fvm, foundation, report_server):
   def fun():
+    a, b, c, d = 0, 0, 0, 0
+    progress = 0
     try:
       print('check: start')
+      send_report(report_server, progress, get_check_status(a, b, c, d))
       ops = FvmOps(cluster, nodes, basics, fvm, foundation, report_server)
+      a = 1
+      progress = 10
+      send_report(report_server, progress, get_check_status(a, b, c, d))
       ops.connect_to_fvm()
+      b = 1
+      progress = 40
+      send_report(report_server, progress, get_check_status(a, b, c, d))
       ops.check_ipmi_mac()
+      c = 1
+      progress = 70
+      send_report(report_server, progress, get_check_status(a, b, c, d))
       ops.check_ipmi_ip()
+      d = 1
+      progress = 100
+      send_report(report_server, progress, get_check_status(a, b, c, d))
       print('check: complete')
-    except Exception as e:
-      print(e)
+    except Exception as exception:
+      print(exception)
+      send_fail_report(report_server, progress, get_check_status(a, b, c, d), exception)
+
   threading.Thread(target=fun).start()
+
+def get_check_status(a, b, c, d):
+  s = {
+    0: '',
+    1: 'Done',
+    2: 'Skip',
+  }
+  up_status = '''connecting to fvm: {}
+start checking ipmi mac exist: {}
+start checking ipmi ip has no conflict: {}
+check passed: {}
+'''
+  return up_status.format(s[a], s[b], s[c], s[d])
+
 
 def image(cluster, nodes, basics, fvm, foundation, report_server):
   def fun():
+    a, b, c, d, e, f, g, h, i = 0, 0, 0, 0, 0, 0, 0, 0, ''
     try:
       print('image: start')
+      send_report(report_server, 0, get_image_status(a, b, c, d, e, f, g, h, i))
       ops = FvmOps(cluster, nodes, basics, fvm, foundation, report_server)
+      a = 1
+      send_report(report_server, 10, get_image_status(a, b, c, d, e, f, g, h, i))
       ops.connect_to_fvm()
+      b = 1
+      send_report(report_server, 20, get_image_status(a, b, c, d, e, f, g, h, i))
       ops.check_ipmi_mac()
+      c = 1
+      send_report(report_server, 30, get_image_status(a, b, c, d, e, f, g, h, i))
       ops.check_ipmi_ip()
+      d = 1
+      send_report(report_server, 40, get_image_status(a, b, c, d, e, f, g, h, i))
       ops.set_foundation_settings()
+      e = 1
+      send_report(report_server, 50, get_image_status(a, b, c, d, e, f, g, h, i))
       ops.configure_ipmi_ip()
+      f = 1
+      send_report(report_server, 60, get_image_status(a, b, c, d, e, f, g, h, i))
       ops.pre_check()
+      g = 1
+      send_report(report_server, 70, get_image_status(a, b, c, d, e, f, g, h, i))
       ops.start_foundation()
+      h = 1
+      send_report(report_server, 80, get_image_status(a, b, c, d, e, f, g, h, i))
       ops.poll_progress()
+      i = 'Imaging Success: 100%'
+      send_report(report_server, 100, get_image_status(a, b, c, d, e, f, g, h, i))
       print('image: complete')
-    except Exception as e:
-      print(e)
+    except Exception as exception:
+      print(exception)
+      send_fail_report(report_server, 100, get_image_status(a, b, c, d, e, f, g, h, i), exception)
+
   threading.Thread(target=fun).start()
+
+def get_image_status(a, b, c, d, e, f, g, h, i):
+  s = {
+    0: '',
+    1: 'Done',
+    2: 'Skip',
+  }
+  up_status = '''connecting to fvm: {}
+start checking ipmi mac exist: {}
+start checking ipmi ip has no conflict: {}
+check passed: {}
+set foundation settings: {}
+configure ipmi ip: {}
+foundation pre check: {}
+start foundation: {}
+
+progress: 
+{}
+'''
+  return up_status.format(s[a], s[b], s[c], s[d], s[e], s[f], s[g], s[h], str(i))
 
 def abort(fvmip, user, password):
   def fun():

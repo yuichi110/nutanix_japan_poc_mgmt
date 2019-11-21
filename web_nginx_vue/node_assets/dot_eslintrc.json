@@ -1,0 +1,27 @@
+{
+  "extends": [
+    "eslint:recommended",
+    "plugin:vue/recommended"
+  ],
+
+  "plugins": [
+
+  ],
+
+  "parserOptions": {
+    "sourceType": "module"
+  },
+
+  "env": {
+    "browser": true
+  },
+
+  "globals": {
+
+  },
+
+  "rules": {
+    "no-unused-vars": 1,
+    "no-console": 1
+  }
+}

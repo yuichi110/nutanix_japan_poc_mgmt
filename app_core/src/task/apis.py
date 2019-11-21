@@ -9,10 +9,14 @@ class TaskApi:
 
   @classmethod
   def tasks(cls, request):
+    def get():
+      return json.dumps(Task.read_all())
+
+    def post():
+      return json.dumps(Task.read_all())
+
     try:
-      if request.method != 'GET':
-        raise Exception405()
-      json_text = json.dumps(Task.read_all())
+      json_text = {'GET':get, 'POST':post}.get(request.method, raise_exception405)()
       return HttpResponse(json_text, content_type='application/json')
     except Exception as e:
       return get_error_response(e)

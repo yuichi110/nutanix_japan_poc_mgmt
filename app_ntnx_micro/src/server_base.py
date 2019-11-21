@@ -48,9 +48,13 @@ def send_report(report_server, progress, message):
   except Exception as e:
     print(e)
 
-def send_fail_report(report_server, message):
+def send_fail_report(report_server, message, exception):
   if not report_server['send']:
     return
+
+  message += '' if message[-1] == '\n' else '\n'
+  message += '======\n'
+  message += 'error: {}'.format(exception)
 
   try:
     url = 'http://{}:{}/api/v1/tasks/{}'.format(

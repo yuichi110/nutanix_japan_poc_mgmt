@@ -10,30 +10,39 @@ from client_power import NutanixPowerClient, NutanixClusterClient
 
 def up(cluster, nodes, report_server):
   def fun():
+    a, b, c, d, e, f, g = 0, 0, 0, 0, 0, 0, 0
+    progress = 0
     try:
-      a, b, c, d, e, f, g = 0, 0, 0, 0, 0, 0, 0
-      send_report(report_server, 0, get_up_status(a, b, c, d, e, f, g))
+      send_report(report_server, progress, get_up_status(a, b, c, d, e, f, g))
       ops = PowerOps(cluster, nodes, report_server)
       a = 1
-      send_report(report_server, 10, get_up_status(a, b, c, d, e, f, g))
+      progress = 10
+      send_report(report_server, progress, get_up_status(a, b, c, d, e, f, g))
       ops.up_all_host()
       b = 1
-      send_report(report_server, 20, get_up_status(a, b, c, d, e, f, g))
+      progress = 20
+      send_report(report_server, progress, get_up_status(a, b, c, d, e, f, g))
       ops.wait_till_all_host_becoming_accesible()
       c = 1
-      send_report(report_server, 40, get_up_status(a, b, c, d, e, f, g))
+      progress = 40
+      send_report(report_server, progress, get_up_status(a, b, c, d, e, f, g))
       ops.wait_till_all_cvm_up()
       d = 1
-      send_report(report_server, 60, get_up_status(a, b, c, d, e, f, g))
+      progress = 60
+      send_report(report_server, progress, get_up_status(a, b, c, d, e, f, g))
       ops.wait_till_all_cvm_accessible()
       e = 1
       f = 1
-      send_report(report_server, 80, get_up_status(a, b, c, d, e, f, g))
+      progress = 80
+      send_report(report_server, progress, get_up_status(a, b, c, d, e, f, g))
       ops.up_cluster()
       g = 1
-      send_report(report_server, 100, get_up_status(a, b, c, d, e, f, g))
-    except Exception as e:
-      print(e)
+      progress = 100
+      send_report(report_server, progress, get_up_status(a, b, c, d, e, f, g))
+    except Exception as exception:
+      print(exception)
+      send_fail_report(report_server, progress, get_up_status(a, b, c, d, e, f, g), exception)
+      
   threading.Thread(target=fun).start()
 
 def get_up_status(a, b, c, d, e, f, g):
@@ -55,44 +64,53 @@ cluster is up: {}
 
 def down(cluster, nodes, report_server):
   def fun():
+    a, b, c, d, e, f, g = 0, 0, 0, 0, 0, 0, 0
+    progress = 0
     try:
-      a, b, c, d, e, f, g = 0, 0, 0, 0, 0, 0, 0
       ops = PowerOps(cluster, nodes, report_server)
       if ops.is_all_cvm_down():
         
         print('all cvms are already down')
         if ops.is_all_host_down():
           a, b, c, d, e, f, g = 2, 2, 2, 2, 2, 2, 2
-          send_report(report_server, 100, get_down_status(a, b, c, d, e, f, g))
+          progress = 100
+          send_report(report_server, progress, get_down_status(a, b, c, d, e, f, g))
         else:
           a, b, c, d, e, f = 2, 2, 2, 2, 2, 1
-          send_report(report_server, 80, get_down_status(a, b, c, d, e, f, g))
+          progress = 80
+          send_report(report_server, progress, get_down_status(a, b, c, d, e, f, g))
           ops.down_all_hosts()
           g = 1
-          send_report(report_server, 100, get_down_status(a, b, c, d, e, f, g))
+          progress = 100
+          send_report(report_server, progress, get_down_status(a, b, c, d, e, f, g))
 
       else:
         if ops.is_cluster_up():
-          send_report(report_server, 0, get_down_status(a, b, c, d, e, f, g))
+          send_report(report_server, progress, get_down_status(a, b, c, d, e, f, g))
           ops.down_over_cluster()
           a = 1
           b = 1
-          send_report(report_server, 30, get_down_status(a, b, c, d, e, f, g))
+          progress = 30
+          send_report(report_server, progress, get_down_status(a, b, c, d, e, f, g))
           ops.down_cluster()
           c = 1
         else:
           a, b, c = 2, 2, 2
         d = 1
-        send_report(report_server, 60, get_down_status(a, b, c, d, e, f, g))
+        progress = 60
+        send_report(report_server, progress, get_down_status(a, b, c, d, e, f, g))
         ops.down_all_cvms()
         e = 1
         f = 1
-        send_report(report_server, 80, get_down_status(a, b, c, d, e, f, g))
+        progress = 80
+        send_report(report_server, progress, get_down_status(a, b, c, d, e, f, g))
         ops.down_all_hosts()
         g = 1
-        send_report(report_server, 100, get_down_status(a, b, c, d, e, f, g))
-    except Exception as e:
-      print(e)
+        progress = 100
+        send_report(report_server, progress, get_down_status(a, b, c, d, e, f, g))
+    except Exception as exception:
+      print(exception)
+      send_fail_report(report_server, progress, get_down_status(a, b, c, d, e, f, g), exception)
   threading.Thread(target=fun).start()
 
 def get_down_status(a, b, c, d, e, f, g):

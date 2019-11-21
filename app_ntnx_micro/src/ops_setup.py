@@ -4,23 +4,73 @@ import threading
 import time
 import os
 import traceback
+from server_base import send_report, send_fail_report
 from client_setup import NutanixSetupClient
 
 def run(cluster, basics, containers, networks, ipam_networks, images, report_server):
   def fun():
+    a, b, c, d, e, f, g, h, i = 0, 0, 0, 0, 0, 0, 0, 0, ''
+    progress = 0
     try:
+      a = 1
+      send_report(report_server, progress, get_setup_status(a, b, c, d, e, f, g, h, i))
       ops = SetupOps(cluster, basics, containers, networks, ipam_networks, images, report_server)
       ops.connect_to_prism()
+      b = 1
+      progress = 10
+      send_report(report_server, progress, get_setup_status(a, b, c, d, e, f, g, h, i))
       ops.set_language()
+      c = 1
+      progress = 20
+      send_report(report_server, progress, get_setup_status(a, b, c, d, e, f, g, h, i))
       ops.delete_unused_containers()
+      d = 1
+      progress = 30
+      send_report(report_server, progress, get_setup_status(a, b, c, d, e, f, g, h, i))
       ops.create_containers()
+      e = 1
+      progress = 40
+      send_report(report_server, progress, get_setup_status(a, b, c, d, e, f, g, h, i))
       ops.delete_unused_networks()
+      f = 1
+      progress = 50
+      send_report(report_server, progress, get_setup_status(a, b, c, d, e, f, g, h, i))
       ops.create_networks()
+      g = 1
+      progress = 60
+      send_report(report_server, progress, get_setup_status(a, b, c, d, e, f, g, h, i))
       ops.create_ipam_networks()
+      h = 1
+      progress = 70
+      send_report(report_server, progress, get_setup_status(a, b, c, d, e, f, g, h, i))
       ops.create_images()
-    except Exception as e:
-      print(e)
+      i = 'upload complete'
+      progress = 100
+      send_report(report_server, progress, get_setup_status(a, b, c, d, e, f, g, h, i))
+
+    except Exception as exception:
+      print('failed with error: {}'.format(exception))
+      send_fail_report(report_server, progress, get_setup_status(a, b, c, d, e, f, g, h, i), exception)
   threading.Thread(target=fun).start()
+
+def get_setup_status(a, b, c, d, e, f, g, h, i):
+  s = {
+    0: '',
+    1: 'Done',
+    2: 'Skip',
+  }
+  up_status = '''connecting to prism: {}
+connected to prism: {}
+set language: {}
+delete unused containers: {}
+create containers: {}
+delete unused networks: {}
+create networks: {}
+create ipam networks: {}
+upload images progress:
+{}
+'''
+  return up_status.format(s[a], s[b], s[c], s[d], s[e], s[f], s[g], s[h], str(i))
 
 class SetupOps:
   def __init__(self, cluster, basics, containers, networks, ipam_networks, images, report_server):

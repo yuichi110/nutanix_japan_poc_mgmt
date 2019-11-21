@@ -1,0 +1,13 @@
+From node:12.13.0-alpine3.10
+RUN npm install -g @vue/cli
+RUN vue create -i '{"useConfigFiles": false, "plugins": {"@vue/cli-plugin-babel": {}, "@vue/cli-plugin-eslint": {"config": "base", "lintOn": ["save"]}}, "router": true, "routerHistoryMode": false, "vuex": true}' node
+WORKDIR /node
+RUN npm install core-js \
+    vue-i18n \
+    @fortawesome/fontawesome-free\
+    axios \
+    bootstrap-vue bootstrap
+COPY ./node_assets/favicon.ico /node/public/favicon.ico
+COPY ./node_assets/vue.config.js /node/vue.config.js
+COPY ./node_assets/dot_eslintrc.json /node/.eslintrc.json
+CMD [ "npm", "run", "serve" ]

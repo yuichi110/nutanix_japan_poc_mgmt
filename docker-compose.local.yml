@@ -1,27 +1,39 @@
 version: '3.7'
 
 services:
-  #nginx: 
-  #  build:
-  #    context: ./nginx
-  #    dockerfile: Dockerfile
-  #  container_name: labmgmt_nginx
-  #  restart: always
-  #  depends_on:
-  #    - django
-  #  ports:
-  #    - 80:80
+  web_nginx: 
+    build:
+      context: ./web_nginx_vue
+      dockerfile: Dockerfile.nginx.local
+    container_name: labmgmt_web_nginx
+    restart: unless-stopped
+    depends_on:
+      - app_core
+      - node
+    ports:
+      - 80:80
 
-  #
-  # APP
-  #
+  web_node: 
+    build:
+      context: ./web_nginx_vue
+      dockerfile: Dockerfile.node.local
+    container_name: labmgmt_web_node
+    restart: unless-stopped
+    volumes:
+      - ./web_nginx_vue/src:/src
+    ports:
+      - 8000:80
+
+  ##################
+  ### APP SERVER ###
+  ##################
 
   app_core:
     build:
       context: ./app_core
       dockerfile: Dockerfile
-    container_name: app_core
-    restart: always
+    container_name: labmgmt_app_core
+    restart: unless-stopped
     ports:
       - 8080:80
     depends_on:
@@ -51,7 +63,7 @@ services:
     build:
       context: ./app_ntnx_micro
       dockerfile: Dockerfile.fvm
-    container_name: app_ntnx_fvm
+    container_name: labmgmt_app_ntnx_fvm
     environment:
       - PORT=80
       - USER=user
@@ -64,7 +76,7 @@ services:
     build:
       context: ./app_ntnx_micro
       dockerfile: Dockerfile.eula
-    container_name: app_ntnx_eula
+    container_name: labmgmt_app_ntnx_eula
     environment:
       - PORT=80
       - USER=user
@@ -77,7 +89,7 @@ services:
     build:
       context: ./app_ntnx_micro
       dockerfile: Dockerfile.setup
-    container_name: app_ntnx_setup
+    container_name: labmgmt_app_ntnx_setup
     environment:
       - PORT=80
       - USER=user
@@ -90,7 +102,7 @@ services:
     build:
       context: ./app_ntnx_micro
       dockerfile: Dockerfile.power
-    container_name: app_ntnx_power
+    container_name: labmgmt_app_ntnx_power
     environment:
       - PORT=80
       - USER=user
@@ -99,9 +111,10 @@ services:
       - 8084:80
     restart: unless-stopped
 
-  #
-  # DB
-  #
+
+  #################
+  ### DB SERVER ###
+  #################
 
   db_postgresql:
     image: postgres:11.5

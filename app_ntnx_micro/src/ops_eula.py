@@ -5,23 +5,69 @@ import threading
 import time
 import os
 import traceback
+from server_base import send_report, send_fail_report
 from client_eula import NutanixEulaClient
 
 def run(cluster, eula, report_server):
   def fun():
+    a, b, c, d, e, f, g, h, i = 0, 0, 0, 0, 0, 0, 0, 0, 0
+    progress = 0
     try:
       print('run: start')
+      a = 1
+      send_report(report_server, progress, get_eula_status(a, b, c, d, e, f, g, h, i))
       ops = EulaOps(cluster, eula, report_server)
+      b = 1
+      progress = 10
+      send_report(report_server, progress, get_eula_status(a, b, c, d, e, f, g, h, i))
       ops.set_temporary_password()
+      c = 1
+      d = 1
+      progress = 20
+      send_report(report_server, progress, get_eula_status(a, b, c, d, e, f, g, h, i))
       ops.connect_to_prism()
+      e = 1
+      progress = 30
+      send_report(report_server, progress, get_eula_status(a, b, c, d, e, f, g, h, i))
       ops.set_eula()
+      f = 1
+      progress = 50
+      send_report(report_server, progress, get_eula_status(a, b, c, d, e, f, g, h, i))
       ops.set_initial_pulse()
+      g = 1
+      progress = 70
+      send_report(report_server, progress, get_eula_status(a, b, c, d, e, f, g, h, i))
       ops.set_initial_alert()
+      h = 1
+      progress = 90
+      send_report(report_server, progress, get_eula_status(a, b, c, d, e, f, g, h, i))
       ops.change_password()
+      i = 1
+      progress = 100
+      send_report(report_server, progress, get_eula_status(a, b, c, d, e, f, g, h, i))
       print('run: end')
-    except Exception as e:
-      print('failed with error: {}'.format(e))
+    except Exception as exception:
+      print('failed with error: {}'.format(exception))
+      send_fail_report(report_server, progress, get_eula_status(a, b, c, d, e, f, g, h, i), exception)
   threading.Thread(target=fun).start()
+
+def get_eula_status(a, b, c, d, e, f, g, h, i):
+  s = {
+    0: '',
+    1: 'Done',
+    2: 'Skip',
+  }
+  up_status = '''connecting to prism: {}
+connected to prism: {}
+set temporary password: {}
+reconnecting to prism: {}
+connected to prism: {}
+set eula: {}
+set initial pulse setting: {}
+set initial alert setting: {}
+change password: {}
+'''
+  return up_status.format(s[a], s[b], s[c], s[d], s[e], s[f], s[g], s[h], s[i])
 
 class EulaOps:
   def __init__(self, cluster, eula, report_server):
