@@ -6,31 +6,16 @@ services:
   ### WEB SERVER ###
   ##################
 
-  web_nginx: 
+  web: 
     build:
       context: ./web_nginx_vue
-      dockerfile: Dockerfile.nginx.local
-    container_name: labmgmt_web_nginx
+      dockerfile: Dockerfile.build
+    container_name: labmgmt_web
     restart: unless-stopped
-    depends_on:
-      - app_core
-      - web_node
     ports:
       - 80:80
     environment:
-      WEB_SERVER: http://web_node:8080
       APP_SERVER: http://app_core:80
-
-  web_node: 
-    build:
-      context: ./web_nginx_vue
-      dockerfile: Dockerfile.node.local
-    container_name: labmgmt_web_node
-    restart: unless-stopped
-    ports:
-      - 8000:8080
-    volumes:
-      - ./web_nginx_vue/src:/node/src
 
 
   ##################

@@ -1,4 +1,4 @@
-From node:12.13.0-alpine3.10 as builder
+From node:12.13.0-alpine3.10
 RUN npm install -g @vue/cli
 RUN vue create -i '{"useConfigFiles": false, "plugins": {"@vue/cli-plugin-babel": {}, "@vue/cli-plugin-eslint": {"config": "base", "lintOn": ["save"]}}, "router": true, "routerHistoryMode": false, "vuex": true}' node
 WORKDIR /node
@@ -12,14 +12,4 @@ COPY ./node_assets/vue.config.js /node/vue.config.js
 COPY ./node_assets/dot_eslintrc.json /node/.eslintrc.json
 COPY ./src /node/src
 RUN npm run build
-
-From nginx:1.17.5-alpine
-RUN rm -rf /usr/share/nginx/html/* \
-    && mkdir /usr/share/nginx/html/static
-COPY --from=builder /node/dist/index.html /usr/share/nginx/html/
-COPY --from=builder /node/dist/ /usr/share/nginx/html/static/
-COPY ./start.nginx.build.sh /usr/local/bin/start.sh
-COPY ./nginx.build.tpl /etc/nginx/nginx.tpl
-ENV PORT 80
-ENV APP_SERVER "http://127.0.0.1:8080"
-CMD ["/usr/local/bin/start.sh"]
+CMD [ "npm", "run", "serve" ]

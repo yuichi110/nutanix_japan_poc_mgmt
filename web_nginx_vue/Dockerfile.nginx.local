@@ -1,5 +1,5 @@
 From nginx:1.17.5-alpine
-COPY ./start.local.sh /usr/local/bin/start.sh
+COPY ./start.nginx.local.sh /usr/local/bin/start.sh
 COPY ./nginx.local.tpl /etc/nginx/nginx.tpl
 RUN chmod 0755 /usr/local/bin/start.sh
 ENV PORT 80
