@@ -1,6 +1,8 @@
 From node:12.13.0-alpine3.10 as builder
 RUN npm install -g @vue/cli
-RUN vue create -i '{"useConfigFiles": false, "plugins": {"@vue/cli-plugin-babel": {}, "@vue/cli-plugin-eslint": {"config": "base", "lintOn": ["save"]}}, "router": true, "routerHistoryMode": false, "vuex": true}' node
+RUN cd / \
+    && vue create -i '{"useConfigFiles": false, "plugins": {"@vue/cli-plugin-babel": {}, "@vue/cli-plugin-eslint": {"config": "base", "lintOn": ["save"]}}, "router": true, "routerHistoryMode": false, "vuex": true}' node
+
 WORKDIR /node
 RUN npm install core-js \
     vue-i18n \
