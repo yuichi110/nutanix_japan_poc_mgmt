@@ -1,7 +1,8 @@
-From python:3.7.5-slim
-RUN pip install flask==1.1.1 paramiko==2.6.0 requests==2.22.0
-ADD ./src /src
+From python:3.8-slim
+RUN pip install fastapi uvicorn
+RUN pip install redis pymongo
+RUN pip install paramiko requests
+RUN apt update; apt install -y ipmitool
 WORKDIR /src
-ENV PORT=80
-ENV DEBUG=False
-ENTRYPOINT ["python", "-u", "server_power.py"]
+COPY ./src /src
+CMD ["uvicorn", "api_power:app", "--host", "0.0.0.0", "--port", "80", "--reload"]

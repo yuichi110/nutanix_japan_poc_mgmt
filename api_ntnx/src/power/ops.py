@@ -5,42 +5,49 @@ import time
 import os
 import traceback
 import threading
-from client_power import NutanixPowerClient, NutanixClusterClient
+from power.client import NutanixPowerClient, NutanixClusterClient
 
-def up(cluster, nodes, set_status):
+_print = print
+def print(text):
+  _print(text, flush=True)
+
+def on(cluster, nodes, set_status):
   def fun():
     a, b, c, d, e, f, g = 0, 0, 0, 0, 0, 0, 0
     progress = 0
     try:
-      set_status(True, progress, get_up_status(a, b, c, d, e, f, g))
-      ops = PowerOps(cluster, nodes, report_server)
+      is_finished = False
+      is_failed = False
+      set_status(progress, get_up_status(a, b, c, d, e, f, g), is_finished, is_failed)
+      ops = PowerOps(cluster, nodes)
       a = 1
       progress = 10
-      set_status(True, progress, get_up_status(a, b, c, d, e, f, g))
+      set_status(progress, get_up_status(a, b, c, d, e, f, g), is_finished, is_failed)
       ops.up_all_host()
       b = 1
       progress = 20
-      set_status(True, progress, get_up_status(a, b, c, d, e, f, g))
+      set_status(progress, get_up_status(a, b, c, d, e, f, g), is_finished, is_failed)
       ops.wait_till_all_host_becoming_accesible()
       c = 1
       progress = 40
-      set_status(True, progress, get_up_status(a, b, c, d, e, f, g))
+      set_status(progress, get_up_status(a, b, c, d, e, f, g), is_finished, is_failed)
       ops.wait_till_all_cvm_up()
       d = 1
       progress = 60
-      set_status(True, progress, get_up_status(a, b, c, d, e, f, g))
+      set_status(progress, get_up_status(a, b, c, d, e, f, g), is_finished, is_failed)
       ops.wait_till_all_cvm_accessible()
       e = 1
       f = 1
       progress = 80
-      set_status(True, progress, get_up_status(a, b, c, d, e, f, g))
+      set_status(progress, get_up_status(a, b, c, d, e, f, g), is_finished, is_failed)
       ops.up_cluster()
       g = 1
       progress = 100
-      set_status(True, progress, get_up_status(a, b, c, d, e, f, g))
+      is_finished = True
+      set_status(progress, get_up_status(a, b, c, d, e, f, g), is_finished, is_failed)
     except Exception as exception:
       print(exception)
-      set_status(False, progress, get_up_status(a, b, c, d, e, f, g), exception)
+      set_status(progress, get_up_status(a, b, c, d, e, f, g), is_finished, is_failed)
       
   threading.Thread(target=fun).start()
 
@@ -61,55 +68,63 @@ cluster is up: {}
   return up_status.format(s[a], s[b], s[c], s[d], s[e], s[f], s[g])
 
 
-def down(cluster, nodes, set_status):
+def off(cluster, nodes, set_status):
   def fun():
     a, b, c, d, e, f, g = 0, 0, 0, 0, 0, 0, 0
     progress = 0
     try:
-      ops = PowerOps(cluster, nodes, report_server)
+      ops = PowerOps(cluster, nodes)
+      is_finished = False
+      is_failed = False
+
       if ops.is_all_cvm_down():
-        
         print('all cvms are already down')
         if ops.is_all_host_down():
           a, b, c, d, e, f, g = 2, 2, 2, 2, 2, 2, 2
           progress = 100
-          set_status(True, progress, get_down_status(a, b, c, d, e, f, g))
+          is_finished = True
+          set_status(progress, get_down_status(a, b, c, d, e, f, g), is_finished, is_failed)
         else:
           a, b, c, d, e, f = 2, 2, 2, 2, 2, 1
           progress = 80
-          set_status(True, progress, get_down_status(a, b, c, d, e, f, g))
+          set_status(progress, get_up_status(a, b, c, d, e, f, g), is_finished, is_failed)
           ops.down_all_hosts()
           g = 1
           progress = 100
-          set_status(True, progress, get_down_status(a, b, c, d, e, f, g))
+          is_finished = True
+          set_status(progress, get_up_status(a, b, c, d, e, f, g), is_finished, is_failed)
 
       else:
         if ops.is_cluster_up():
-          set_status(True, progress, get_down_status(a, b, c, d, e, f, g))
+          set_status(progress, get_up_status(a, b, c, d, e, f, g), is_finished, is_failed)
           ops.down_over_cluster()
           a = 1
           b = 1
           progress = 30
-          set_status(True, progress, get_down_status(a, b, c, d, e, f, g))
+          set_status(progress, get_up_status(a, b, c, d, e, f, g), is_finished, is_failed)
           ops.down_cluster()
           c = 1
         else:
           a, b, c = 2, 2, 2
         d = 1
         progress = 60
-        set_status(True, progress, get_down_status(a, b, c, d, e, f, g))
+        set_status(progress, get_up_status(a, b, c, d, e, f, g), is_finished, is_failed)
         ops.down_all_cvms()
         e = 1
         f = 1
         progress = 80
-        set_status(True, progress, get_down_status(a, b, c, d, e, f, g))
+        set_status(progress, get_up_status(a, b, c, d, e, f, g), is_finished, is_failed)
         ops.down_all_hosts()
         g = 1
         progress = 100
-        set_status(True, progress, get_down_status(a, b, c, d, e, f, g))
+        is_finished = True
+        set_status(progress, get_up_status(a, b, c, d, e, f, g), is_finished, is_failed)
     except Exception as exception:
       print(exception)
-      set_status(False, progress, get_down_status(a, b, c, d, e, f, g), exception)
+      progress = 100
+      is_finished = True
+      is_failed = True
+      set_status(progress, get_up_status(a, b, c, d, e, f, g), is_finished, is_failed)
   threading.Thread(target=fun).start()
 
 def get_down_status(a, b, c, d, e, f, g):
@@ -130,7 +145,7 @@ hosts are stop: {}
 
 
 class PowerOps:
-  def __init__(self, cluster, nodes, report_server):
+  def __init__(self, cluster, nodes):
     self.ip =       cluster['ip']
     self.user =     cluster['user']
     self.password = cluster['password']

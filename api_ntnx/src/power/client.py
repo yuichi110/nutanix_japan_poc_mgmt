@@ -1,7 +1,7 @@
-from nutanix_mod_base import Base
-from nutanix_mod_clusters import Clusters
-from nutanix_mod_hosts import Hosts
-from nutanix_mod_vms import Vms
+from modules.base import Base
+from modules.clusters import Clusters
+from modules.hosts import Hosts
+from modules.vms import Vms
 import subprocess
 import paramiko
 

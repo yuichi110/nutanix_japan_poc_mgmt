@@ -8,30 +8,51 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from util import *
-from nutanix_serializer import *
-
-# REDIS
-def get_redis():
-  return redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB)
-REDIS = get_redis()
-
-# MONGODB
-def get_collection():
-  client = pymongo.MongoClient(f'mongodb://{MONGO_HOST}:{MONGO_PORT}/',
-    username=MONGO_USERNAME, password=MONGO_PASSWORD)
-  col_cluster = client['api_cluster']['cluster']
-  return col_cluster
-COLLECTION = get_collection()
+import nutanix_serializer as ns
+import power.ops as pops
 
 # FASTAPI
 app = fastapi.FastAPI()
+task_dict = {}
 
-@app.post("/api/public/foundation/v1/image/")
-async def public_get_clusters(request: Request):
-  cursol = COLLECTION.find({}, {'_id': False})
-  return get_json(cursol)
+@app.get("/api/public/power/v1/tasks/")
+async def public_get_imagings(request: Request):
+  return task_dict
 
-@app.post("/api/private/foundation/v1/image/")
-async def public_get_clusters(request: Request):
-  cursol = COLLECTION.find({}, {'_id': False})
-  return get_json(cursol)
+@app.get("/api/public/power/v1/tasks/{task_uuid}")
+async def public_get_imaging(request: Request, task_uuid):
+  if task_uuid not in task_dict:
+    raise fastapi.HTTPException(status_code=404, detail='task does not exist')
+  return task_dict[task_uuid]
+
+@app.post("/api/public/power/v1/on/")
+async def public_on(request: Request):
+  try:
+    d = await request.json()
+    d = ns.Power.loads(d)
+    cluster = d['cluster']
+    nodes = d['nodes']
+  except Exception as e:
+    print(e)
+    raise fastapi.HTTPException(status_code=400, detail='json format error')
+
+  task_uuid = str(uuid.uuid4())
+  set_status = get_closure_set_status(task_dict, task_uuid)
+  pops.on(cluster, nodes, set_status)
+  return {'uuid':task_uuid}
+
+@app.post("/api/public/power/v1/off/")
+async def public_off(request: Request):
+  try:
+    d = await request.json()
+    d = ns.Power.loads(d)
+    cluster = d['cluster']
+    nodes = d['nodes']
+  except Exception as e:
+    print(e)
+    raise fastapi.HTTPException(status_code=400, detail='json format error')
+
+  task_uuid = str(uuid.uuid4())
+  set_status = get_closure_set_status(task_dict, task_uuid)
+  pops.off(cluster, nodes, set_status)
+  return {'uuid':task_uuid}

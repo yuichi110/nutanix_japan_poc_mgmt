@@ -14,4 +14,6 @@ sed -i -e "s/{{API_EULA_HOST}}/$API_EULA_HOST/g" /etc/nginx/nginx.conf
 sed -i -e "s/{{API_EULA_PORT}}/$API_EULA_PORT/g" /etc/nginx/nginx.conf
 sed -i -e "s/{{API_SETUP_HOST}}/$API_SETUP_HOST/g" /etc/nginx/nginx.conf
 sed -i -e "s/{{API_SETUP_PORT}}/$API_SETUP_PORT/g" /etc/nginx/nginx.conf
+sed -i -e "s/{{API_POWER_HOST}}/$API_POWER_HOST/g" /etc/nginx/nginx.conf
+sed -i -e "s/{{API_POWER_PORT}}/$API_POWER_PORT/g" /etc/nginx/nginx.conf
 nginx -g "daemon off;"

@@ -45,6 +45,9 @@ http {
     location /api/public/setup/v1/ {
       proxy_pass http://{{API_SETUP_HOST}}:{{API_SETUP_PORT}};
     }
+    location /api/public/power/v1/ {
+      proxy_pass http://{{API_POWER_HOST}}:{{API_POWER_PORT}};
+    }
   }
 }
 
