@@ -1,0 +1,7 @@
+From python:3.7.5-slim
+RUN pip install flask==1.1.1 paramiko==2.6.0 requests==2.22.0
+ADD ./src /src
+WORKDIR /src
+ENV PORT=80
+ENV DEBUG=False
+ENTRYPOINT ["python", "-u", "server_setup.py"]

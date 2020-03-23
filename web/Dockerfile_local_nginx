@@ -1,0 +1,8 @@
+From nginx:1.17.5-alpine
+COPY ./nginx/local/start.sh /usr/local/bin/start.sh
+COPY ./nginx/local/nginx.tpl /etc/nginx/nginx.tpl
+RUN chmod 0755 /usr/local/bin/start.sh
+ENV PORT 80
+ENV WEB_SERVER "http://127.0.0.1:8080"
+ENV API_SERVER "http://127.0.0.1:8081"
+CMD ["/usr/local/bin/start.sh"]

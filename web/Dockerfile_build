@@ -1,0 +1,35 @@
+# (1) Build node
+From node:12.13.0-alpine3.10 as builder
+
+# setup vue
+RUN npm install -g @vue/cli
+RUN cd / \
+    && vue create -i '{"useConfigFiles": false, "plugins": {"@vue/cli-plugin-babel": {}, "@vue/cli-plugin-eslint": {"config": "base", "lintOn": ["save"]}}, "router": true, "routerHistoryMode": false, "vuex": true}' node
+WORKDIR /node
+RUN npm install core-js \
+    vue-i18n \
+    @fortawesome/fontawesome-free\
+    axios \
+    bootstrap-vue bootstrap
+
+# copy assets and code
+COPY ./node_assets/favicon.ico /node/public/favicon.ico
+COPY ./node_assets/vue.config.js /node/vue.config.js
+COPY ./node_assets/dot_eslintrc.json /node/.eslintrc.json
+COPY ./src /node/src
+
+# build
+RUN npm run build
+
+# (2) Setup nginx(vue + reverse-proxy)
+From nginx:1.17.5-alpine
+RUN rm -rf /usr/share/nginx/html/* \
+    && mkdir /usr/share/nginx/html/static
+COPY --from=builder /node/dist/index.html /usr/share/nginx/html/
+COPY --from=builder /node/dist/ /usr/share/nginx/html/static/
+COPY ./nginx/build/start.sh /usr/local/bin/start.sh
+COPY ./nginx/build/nginx.tpl /etc/nginx/nginx.tpl
+RUN chmod 0755 /usr/local/bin/start.sh
+ENV PORT 80
+ENV APP_SERVER "http://127.0.0.1:8080"
+CMD ["/usr/local/bin/start.sh"]

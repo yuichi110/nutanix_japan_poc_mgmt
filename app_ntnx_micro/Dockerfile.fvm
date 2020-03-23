@@ -1,8 +1,0 @@
-From python:3.7.4-slim
-RUN pip install flask==1.1.1 paramiko==2.6.0 requests==2.22.0
-ADD ./src /src
-WORKDIR /src
-ENV PORT=80
-ENV USER=user
-ENV PASSWORD=password
-ENTRYPOINT ["python", "-u", "server_fvm.py"]
