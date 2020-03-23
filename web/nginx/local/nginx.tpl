@@ -39,6 +39,12 @@ http {
     location /api/public/foundation/v1/ {
       proxy_pass http://{{API_FOUNDATION_HOST}}:{{API_FOUNDATION_PORT}};
     }
+    location /api/public/eula/v1/ {
+      proxy_pass http://{{API_EULA_HOST}}:{{API_EULA_PORT}};
+    }
+    location /api/public/setup/v1/ {
+      proxy_pass http://{{API_SETUP_HOST}}:{{API_SETUP_PORT}};
+    }
   }
 }
 

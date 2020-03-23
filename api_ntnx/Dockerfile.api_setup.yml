@@ -1,7 +1,7 @@
 From python:3.7.5-slim
-RUN pip install flask==1.1.1 paramiko==2.6.0 requests==2.22.0
-ADD ./src /src
+RUN pip install fastapi uvicorn
+RUN pip install redis pymongo
+RUN pip install paramiko requests
 WORKDIR /src
-ENV PORT=80
-ENV DEBUG=False
-ENTRYPOINT ["python", "-u", "server_setup.py"]
+COPY ./src /src
+CMD ["uvicorn", "api_setup:app", "--host", "0.0.0.0", "--port", "80", "--reload"]

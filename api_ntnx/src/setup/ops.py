@@ -4,52 +4,58 @@ import threading
 import time
 import os
 import traceback
-from client_setup import NutanixSetupClient
+from setup.client import NutanixSetupClient
 
-def run(cluster, basics, containers, networks, ipam_networks, images, report_server):
+def setup(cluster, basics, containers, networks, ipam_networks, images, set_status):
   def fun():
     a, b, c, d, e, f, g, h, i = 0, 0, 0, 0, 0, 0, 0, 0, ''
     progress = 0
     try:
       a = 1
-      send_report(report_server, progress, get_setup_status(a, b, c, d, e, f, g, h, i))
-      ops = SetupOps(cluster, basics, containers, networks, ipam_networks, images, report_server)
+      is_finished = False
+      is_failed = False
+      set_status(progress, get_setup_status(a, b, c, d, e, f, g, h, i), is_finished, is_failed)
+      ops = SetupOps(cluster, basics, containers, networks, ipam_networks, images)
       ops.connect_to_prism()
       b = 1
       progress = 10
-      send_report(report_server, progress, get_setup_status(a, b, c, d, e, f, g, h, i))
+      set_status(progress, get_setup_status(a, b, c, d, e, f, g, h, i), is_finished, is_failed)
       ops.set_language()
       c = 1
       progress = 20
-      send_report(report_server, progress, get_setup_status(a, b, c, d, e, f, g, h, i))
+      set_status(progress, get_setup_status(a, b, c, d, e, f, g, h, i), is_finished, is_failed)
       ops.delete_unused_containers()
       d = 1
       progress = 30
-      send_report(report_server, progress, get_setup_status(a, b, c, d, e, f, g, h, i))
+      set_status(progress, get_setup_status(a, b, c, d, e, f, g, h, i), is_finished, is_failed)
       ops.create_containers()
       e = 1
       progress = 40
-      send_report(report_server, progress, get_setup_status(a, b, c, d, e, f, g, h, i))
+      set_status(progress, get_setup_status(a, b, c, d, e, f, g, h, i), is_finished, is_failed)
       ops.delete_unused_networks()
       f = 1
       progress = 50
-      send_report(report_server, progress, get_setup_status(a, b, c, d, e, f, g, h, i))
+      set_status(progress, get_setup_status(a, b, c, d, e, f, g, h, i), is_finished, is_failed)
       ops.create_networks()
       g = 1
       progress = 60
-      send_report(report_server, progress, get_setup_status(a, b, c, d, e, f, g, h, i))
+      set_status(progress, get_setup_status(a, b, c, d, e, f, g, h, i), is_finished, is_failed)
       ops.create_ipam_networks()
       h = 1
       progress = 70
-      send_report(report_server, progress, get_setup_status(a, b, c, d, e, f, g, h, i))
+      set_status(progress, get_setup_status(a, b, c, d, e, f, g, h, i), is_finished, is_failed)
       ops.create_images()
       i = 'upload complete'
       progress = 100
-      send_report(report_server, progress, get_setup_status(a, b, c, d, e, f, g, h, i))
+      is_finished = True
+      set_status(progress, get_setup_status(a, b, c, d, e, f, g, h, i), is_finished, is_failed)
 
     except Exception as exception:
       print('failed with error: {}'.format(exception))
-      send_fail_report(report_server, progress, get_setup_status(a, b, c, d, e, f, g, h, i), exception)
+      progress = 100
+      is_finished = True
+      is_failed = True
+      set_status(progress, get_setup_status(a, b, c, d, e, f, g, h, i), is_finished, is_failed)
   threading.Thread(target=fun).start()
 
 def get_setup_status(a, b, c, d, e, f, g, h, i):
@@ -72,7 +78,7 @@ upload images progress:
   return up_status.format(s[a], s[b], s[c], s[d], s[e], s[f], s[g], s[h], str(i))
 
 class SetupOps:
-  def __init__(self, cluster, basics, containers, networks, ipam_networks, images, report_server):
+  def __init__(self, cluster, basics, containers, networks, ipam_networks, images):
     self.session = None
     self.ip =       cluster['ip']
     self.user =     cluster['user']

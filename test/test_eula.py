@@ -2,19 +2,13 @@ import json
 import requests
 import time
 
-URL_BASE = 'http://127.0.0.1/api/public/foundation/v1/'
+URL_BASE = 'http://127.0.0.1/api/public/eula/v1/'
 
 def main():
-  test_foundation()
+  test_eula()
 
-def test_foundation():
-  d2 = {
-    "foundation": {
-      "aos_version": "5.10.1"
-    }
-  }
-  d2.update(d)
-  response = requests.post(URL_BASE + 'imagings/', data=json.dumps(d2))
+def test_eula():
+  response = requests.post(URL_BASE + 'eulas/', data=json.dumps(d))
   print(response.text)
 
 

@@ -5,49 +5,55 @@ import threading
 import time
 import os
 import traceback
-from client_eula import NutanixEulaClient
+from eula.client import NutanixEulaClient
 
-def run(cluster, eula, set_status):
+def eula(cluster, eula, set_status):
   def fun():
     a, b, c, d, e, f, g, h, i = 0, 0, 0, 0, 0, 0, 0, 0, 0
     progress = 0
     try:
       print('run: start')
       a = 1
-      set_status(True, progress, get_eula_status(a, b, c, d, e, f, g, h, i))
-      ops = EulaOps(cluster, eula, report_server)
+      is_finished = False
+      is_failed = False
+      set_status(progress, get_eula_status(a, b, c, d, e, f, g, h, i), is_finished, is_failed)
+      ops = EulaOps(cluster, eula)
       b = 1
       progress = 10
-      set_status(True, progress, get_eula_status(a, b, c, d, e, f, g, h, i))
+      set_status(progress, get_eula_status(a, b, c, d, e, f, g, h, i), is_finished, is_failed)
       ops.set_temporary_password()
       c = 1
       d = 1
       progress = 20
-      set_status(True, progress, get_eula_status(a, b, c, d, e, f, g, h, i))
+      set_status(progress, get_eula_status(a, b, c, d, e, f, g, h, i), is_finished, is_failed)
       ops.connect_to_prism()
       e = 1
       progress = 30
-      set_status(True, progress, get_eula_status(a, b, c, d, e, f, g, h, i))
+      set_status(progress, get_eula_status(a, b, c, d, e, f, g, h, i), is_finished, is_failed)
       ops.set_eula()
       f = 1
       progress = 50
-      set_status(True, progress, get_eula_status(a, b, c, d, e, f, g, h, i))
+      set_status(progress, get_eula_status(a, b, c, d, e, f, g, h, i), is_finished, is_failed)
       ops.set_initial_pulse()
       g = 1
       progress = 70
-      set_status(True, progress, get_eula_status(a, b, c, d, e, f, g, h, i))
+      set_status(progress, get_eula_status(a, b, c, d, e, f, g, h, i), is_finished, is_failed)
       ops.set_initial_alert()
       h = 1
       progress = 90
-      set_status(True, progress, get_eula_status(a, b, c, d, e, f, g, h, i))
+      set_status(progress, get_eula_status(a, b, c, d, e, f, g, h, i), is_finished, is_failed)
       ops.change_password()
       i = 1
       progress = 100
-      set_status(True, progress, get_eula_status(a, b, c, d, e, f, g, h, i))
+      is_finished = True
+      set_status(progress, get_eula_status(a, b, c, d, e, f, g, h, i), is_finished, is_failed)
       print('run: end')
     except Exception as exception:
       print('failed with error: {}'.format(exception))
-      set_status(False, progress, get_eula_status(a, b, c, d, e, f, g, h, i), exception)
+      progress = 100
+      is_finished = True
+      is_failed = True
+      set_status(progress, get_eula_status(a, b, c, d, e, f, g, h, i), is_finished, is_failed)
   threading.Thread(target=fun).start()
 
 def get_eula_status(a, b, c, d, e, f, g, h, i):
@@ -69,7 +75,7 @@ change password: {}
   return up_status.format(s[a], s[b], s[c], s[d], s[e], s[f], s[g], s[h], s[i])
 
 class EulaOps:
-  def __init__(self, cluster, eula, report_server):
+  def __init__(self, cluster, eula):
     self.INITIAL_PASSWORD = 'nutanix/4u'
     self.TEMPORARY_PASSWORD = 'DevOpsTeam4Eva!'
     

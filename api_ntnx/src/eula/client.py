@@ -1,8 +1,8 @@
 import json
 import requests
-from nutanix_mod_base import Base
-from nutanix_mod_alerts import Alerts
-from nutanix_mod_users import Users
+from modules.base import Base
+from modules.alerts import Alerts
+from modules.users import Users
 
 class NutanixEulaClient(Base, Alerts, Users):
 

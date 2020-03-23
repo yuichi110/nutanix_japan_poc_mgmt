@@ -79,24 +79,14 @@ class Eula:
     return json.dumps(d)
 
   @classmethod
-  def loads(cls, s):
-    try:
-      d = json.loads(s)
-    except:
-      raise Exception('failed to parse json')
+  def loads(cls, d):
     if 'cluster' not in d:
       raise Exception("key 'cluster' not in json")
     if 'eula' not in d:
       raise Exception("key 'eula' not in json")
-    if 'credential' not in d:
-      raise Exception("key 'credential' not in json") 
-    if 'report_server' not in d:
-      raise Exception("key 'report_server' not in json")
     nd = {
       'cluster':_get_json_cluster(d['cluster']),
       'eula':_get_json_eula(d['eula']),
-      'credential':_get_json_credential(d['credential']),
-      'report_server':_get_json_report_server(d['report_server'])
     }
     return nd
 
@@ -109,12 +99,7 @@ class Setup:
     return json.dumps(d)
 
   @classmethod
-  def loads(cls, s):
-    try:
-      d = json.loads(s)
-    except:
-      raise Exception('failed to parse json')
-
+  def loads(cls, d):
     if 'cluster' not in d:
       raise Exception("key 'cluster' not in json")
     if 'basics' not in d:
@@ -127,10 +112,7 @@ class Setup:
       raise Exception("key 'ipam_networks' not in json")
     if 'images' not in d:
       raise Exception("key 'images' not in json")   
-    if 'credential' not in d:
-      raise Exception("key 'credential' not in json") 
-    if 'report_server' not in d:
-      raise Exception("key 'report_server' not in json") 
+
     nd = {
       'cluster':_get_json_cluster(d['cluster']),
       'basics':_get_json_basics(d['basics']),
@@ -138,8 +120,6 @@ class Setup:
       'networks':_get_json_networks(d['networks']),
       'ipam_networks':_get_json_ipam_networks(d['ipam_networks']),
       'images':_get_json_images(d['images']),
-      'credential':_get_json_credential(d['credential']),
-      'report_server':_get_json_report_server(d['report_server'])
     }
     return nd
 
@@ -152,24 +132,14 @@ class Power:
     return json.dumps(d)
 
   @classmethod
-  def loads(cls, s):
-    try:
-      d = json.loads(s)
-    except:
-      raise Exception('failed to parse json')
+  def loads(cls, d):
     if 'cluster' not in d:
       raise Exception("key 'cluster' not in json")
     if 'nodes' not in d:
       raise Exception("key 'nodes' not in json")
-    if 'credential' not in d:
-      raise Exception("key 'credential' not in json") 
-    if 'report_server' not in d:
-      raise Exception("key 'report_server' not in json")
     nd = {
       'cluster':_get_json_cluster(d['cluster']),
       'nodes':_get_json_nodes(d['nodes']),
-      'credential':_get_json_credential(d['credential']),
-      'report_server':_get_json_report_server(d['report_server'])
     }
     return nd
 
